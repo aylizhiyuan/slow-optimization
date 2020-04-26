@@ -1,7 +1,7 @@
 <!--
  * @Date: 2020-04-18 21:04:40
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-04-25 22:54:30
+ * @LastEditTime: 2020-04-26 12:54:34
  * @FilePath: /慢路径优化策略/README.md
  -->
 
@@ -120,7 +120,10 @@ ping看到的参数主要是网络的直连情况,如果具体到我们的应用
 2. 查看本机所有开放的端口情况
 
         #Mac下
-        lsof -nP -iTCP -sTCP:LISTEN
+        lsof -nP -iTCP -sTCP:LISTEN 查看打开的TCP连接端口
+
+        #简单点的
+        lsof -i TCP 查看所有的TCP连接
         
         #Linux
         netstat -pt
@@ -150,6 +153,19 @@ ping看到的参数主要是网络的直连情况,如果具体到我们的应用
 因为浏览器的TTFB的时间 = 网络往返的时间（本地测试忽略） + 服务器处理时间
 
 但是如果是在忽略网速的情况下,也就是在本地测试服务器启动应用的时候,那么，默认这个浏览器的等待时间TTFB = 服务器的处理时间
+
+- 首先用curl来测试直接发送Http请求的时间,这部分时间如果跟在代码中的时间一致的话,至少可以排除代码上的问题
+
+         curl -w %{time_connect}:%{time_starttransfer}:%{time_total} -s -o /dev/null -b "connect.sid=s%3A3kZt2xMcEbCjoe2HD8RkjvGkrJMh5gEc.xoERF5sytSmODh1Of62Q8oZ6Os1giQ9KncRPonJLAao" localhost:3000/admin/masterdata/people/people_list4m
+
+- 然后用shell来测试远程数据库的查询时间,看是否在查询时间上比在代码中慢
+
+        mongo mongodb://mongo.test.sec.zhisiyun.com:29999
+        //输入查询语句,对比跟在代码中的时间一致,如果是一致的话,那说明的确是数据库查询本身的问题了
+        //需要注意的是无论是用工具查，还是用shell查，他都不会一次性给你返回所有的结果,都是分批次查的
+
+- 代码中其实查询超过2万条的数据返回,查询的速度很快,但是网络传输中,数据库不断的向服务器传输数据,这个时间成本是非常的大的,目前没有找到很好的解决方案....
+
 
 
 ### 2. Liunx系统优化
