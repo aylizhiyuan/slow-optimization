@@ -18,6 +18,7 @@
   "homepage": "https://github.com/aylizhiyuan/slow-optimization#readme",
   "dependencies": {
     "bluebird": "^3.7.2",
+    "easy-monitor": "^2.2.8",
     "express": "^4.17.1",
     "v8-profiler": "^5.7.0"
   }
