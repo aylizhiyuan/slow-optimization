@@ -5,7 +5,7 @@ var bluebird = require('bluebird');
 var profiler = require('v8-profiler');
 var express = require('express');
 var app = express();
-//添加监控器，查看火焰图
+//添加监控器，查看火焰图 ,可配合devTools来看,这个能找到比较具体耗费时间的函数
 const easyMonitor = require('easy-monitor');
 easyMonitor('lizhiyuan');
 
