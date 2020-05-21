@@ -1,0 +1,22 @@
+{
+  "name": "shlow",
+  "version": "1.0.0",
+  "description": "<!--  * @Date: 2020-04-18 21:04:40  * @LastEditors: lizhiyuan  * @LastEditTime: 2020-04-26 12:54:34  * @FilePath: /慢路径优化策略/README.md  -->",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aylizhiyuan/slow-optimization.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aylizhiyuan/slow-optimization/issues"
+  },
+  "homepage": "https://github.com/aylizhiyuan/slow-optimization#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
