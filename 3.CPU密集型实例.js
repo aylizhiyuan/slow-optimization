@@ -6,13 +6,13 @@ const fib = n => {
     else if (n === 1) return 1;
     else return fib(n - 1) + fib(n - 2);
 }
-const now = Data.now();
+const now = Date.now();
 const result1 = fib(40);
-console.log(Data.now() - now);
+console.log(Date.now() - now);
 const result2 = fib(40);
-console.log(Data.now() - now);
+console.log(Date.now() - now);
 const result3 = fib(40);
-console.log(Data.now() - now);
+console.log(Date.now() - now);
 
 //多线程状态执行的结果
 const {
@@ -23,24 +23,24 @@ const {
 } = require('worker_threads');
 
 if(isMainThread) {
-    const now = Data.now();
+    const now = Date.now();
     const worker1 = new Worker(__filename,{
         wokerData:40
     })
     worker1.on("message",() => {
-        console.log(Data.now() - now);
+        console.log(Date.now() - now);
     })
     const worker2 = new Worker(__filename,{
         wokerData:40
     })
     worker2.on("message",() => {
-        console.log(Data.now() - now);
+        console.log(Date.now() - now);
     })
     const worker3 = new Worker(__filename,{
         wokerData:40
     })
     worker3.on("message",() => {
-        console.log(Data.now() - now);
+        console.log(Date.now() - now);
     })
 } else {
     const fib = n => {
