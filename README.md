@@ -382,6 +382,12 @@ active/s: 本地初始化的 TCP 连接数 ／每秒（例如，通过connect() 
 passive/s: 远程初始化的 TCP 连接数／每秒（例如，通过accept() ）
 retrans/s: TCP重发数／每秒
 
+### 3. 常见疑难杂症分析总结
+
+1. 
+
+
+
 
 
 
