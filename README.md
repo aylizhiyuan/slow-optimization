@@ -376,6 +376,13 @@ sar是查看操作系统报告指标的各种工具中，最为普遍和方便�
 - -w 报告系统交换活动状况
 - -y 报告TTY设备活动状况
 
+sar n TCP,ETCP 1 
+
+active/s: 本地初始化的 TCP 连接数 ／每秒（例如，通过connect() ）
+passive/s: 远程初始化的 TCP 连接数／每秒（例如，通过accept() ）
+retrans/s: TCP重发数／每秒
+
+
 
 
 
