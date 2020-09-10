@@ -33,5 +33,13 @@ app.listen(3000,function(){
 //2. curl localhost:3000/cpuprofile
 //3. ab -c 20 -n 2000 "http://localhost:3000/encrypt?password=123456"
 //4. 打开检查---> devtools ---> more tools --> javascript profile ---> load
+
 //查看占用最多CPU性能的函数,也可以通过火焰图查看
+// npm i flamegraph -g 
+// flamegraph -t cpuprofile -f cpuprofile-xxx.cpuprofile -o cpuprofile.svg
+
+
+// 通过v8-analytics 可以很快速的看到CPU的使用情况
+// npm i v8-analytics -g 
+// va timeout cpuprofile-xxx.cpuprofile 200 --only
 
