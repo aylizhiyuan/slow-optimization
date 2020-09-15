@@ -15,6 +15,7 @@ let source_relate = async function(req, res) {
     let pf_configs = req.body.pf_configs || [];
     try{
         let new_data = await CusGrowthSourceConfig.insertMany(datas);
+        // if判断要考虑null的情况,假设查不出来,或者数据丢失了,需要做兼容性处理
         if(new_data) {
             return res.json({
                 code: "OK",
