@@ -20,6 +20,7 @@
     "bluebird": "^3.7.2",
     "easy-monitor": "^2.2.8",
     "express": "^4.17.1",
+    "mongoose": "^5.10.5",
     "v8-profiler": "^5.7.0"
   }
 }
