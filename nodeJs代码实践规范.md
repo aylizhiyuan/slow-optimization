@@ -21,6 +21,8 @@ let source_relate = async function(req, res) {
                 code: "OK",
                 msg: '保存成功！'
             })
+        }else{
+            //继续下面的代码逻辑
         }
     }catch(e){
         // 如果不返回错误的话直接打印
@@ -68,7 +70,6 @@ async function asyncTaskWithCb(cb) {
 async function asyncFunctionWithThrow() {
   const [err, user] = await to(UserModel.findById(1));
   if (!user) throw new Error('User not found');
-  
 }
 ```
 
@@ -92,7 +93,6 @@ async function fetchAndDecode(url, type) {
   } else if(type === 'text') {
     content = await response.text();
   }
-
   return content;
 }
 async function displayContent() {
