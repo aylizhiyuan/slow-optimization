@@ -1,13 +1,18 @@
 const log4js = require("log4js");
 const express = require("express");
 const fs = require('fs');
-log4js.addLayout('json', function(config) {
-  return function(logEvent) { return JSON.stringify(logEvent) + config.separator; }
+log4js.addLayout('json', config => function (logEvent) {
+  return JSON.stringify(logEvent) + config.separator;
 });
 log4js.configure({
   //输出信息
   appenders: { 
-    out:{ type:"file",filename:"error.log",layout:{type:"pattern",pattern: "%d{yyyy/MM/dd-hh:mm:ss} %p %f:%l:%o %m%n"}}
+    out:{ 
+      type:"file",
+      filename:"error.log",
+      // layout:{type:"pattern",pattern: "%d{yyyy/MM/dd-hh:mm:ss} %p %f:%l:%o %m%n"}
+      layout: { type: 'json', separator: ',' }
+    }
   },
   // 输出的配置
   categories: { 
@@ -27,7 +32,8 @@ app.get('/',function(req,res){
     // 2.记录在.log日志中
     // 3.直接使用pm2中的app-out.log，但是无法固定格式
     // 进程中的运行时报错pm2 记录,默认的地址是.pm2/logs/app-error.log
-    logger.info(req);
+    var a = {name:'lzy'}
+    logger.info(req.hostname);
     logger.error(new Error("错误对象"))
     res.send("hello world")
     logger.info("请求处理之后")
