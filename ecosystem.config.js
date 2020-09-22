@@ -1,7 +1,7 @@
 module.exports = {
     apps:[{
         name:"app",
-        script:"./app.js",
+        script:"./log4js.js",
         env:{
             NODE_ENV:"development"
         },
