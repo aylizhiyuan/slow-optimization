@@ -20,6 +20,7 @@
     "bluebird": "^3.7.2",
     "bunyan": "^1.8.14",
     "cron": "^1.8.2",
+    "daemonize2": "^0.4.2",
     "easy-monitor": "^2.2.8",
     "express": "^4.17.1",
     "log4js": "^6.3.0",

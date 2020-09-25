@@ -13,10 +13,11 @@ var process = require('process');
 var p = fork('worker.js');
 process.on("exit",function(){
     // 这里想办法把子进程杀死就可以了....
+    process.kill(p.pid,"SIGKILL");
     console.log("父进程退出...");
 })
 console.log(process.pid,p.pid);
-throw new Error("错误的代码...."); // 父进程的失败会让子进程直接常驻内存了...
+// throw new Error("错误的代码...."); // 父进程的失败会让子进程直接常驻内存了...
 
 
 
