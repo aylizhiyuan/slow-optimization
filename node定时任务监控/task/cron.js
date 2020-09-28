@@ -6,7 +6,7 @@ const job = new CronJob('*/5 * * * * *', function() {
         const d = new Date();
         console.log(`pid-${process.pid} 每五秒打印一下当前时间任务:`, d);
         // 当前子进程出问题了....
-        throw new ReferenceError("代码级别的错误....");
+        // throw new ReferenceError("代码级别的错误....");
     }catch(error){
         console.log(error) //后期考虑更好的方式记录错误日志
     }

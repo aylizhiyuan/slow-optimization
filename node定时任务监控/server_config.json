@@ -1,0 +1,7 @@
+{
+    "dirName":"task",
+    "cronList":[
+        "/task/cron.js",
+        "/task/cron2.js"
+    ]
+}
