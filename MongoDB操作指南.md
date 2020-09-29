@@ -365,6 +365,13 @@ var dataList = yield ProcessInstance.aggregate([
 ```
 
 
+## mongodb数据库设计思路
+
+### 一对一
+
+### 一对多
+
+### 多对多
 
 
 
