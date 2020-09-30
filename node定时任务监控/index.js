@@ -41,7 +41,7 @@ app.listen(8888,function(){
 // 向子进程发送消息
 // task.send("我是父进程....");
 
-// 保证主进程不会退出....
+// 保证主进程不会退出....类似于全局范围内的try{}catch(){}
 process.on('uncaughtException', function (err) {
     err.name = "UncaughtExceptionError";
     console.log('Caught exception: ' + err.stack);

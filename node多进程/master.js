@@ -6,9 +6,7 @@
 // 在父子进程中也是一样，所有的父进程都会默认等待子进程结束后结束....
 // 子进程如果失败了,退出后父进程执行完毕后退出....不存在问题
 // 父进程如果失败了,提前结束了,子进程就变成了孤儿进程...
-var spawn = require('child_process').spawn;
 var fork = require('child_process').fork;
-var kill = require('./node-tree-kill');
 var process = require('process');
 var p = fork('worker.js');
 process.on("exit",function(){
