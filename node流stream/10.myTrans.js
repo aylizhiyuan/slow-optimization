@@ -3,21 +3,21 @@ var Transform = require('stream').Transform
 var morse = require('morse')
 
 class Morsify extends Transform {
-  constructor() {
-    super()
+  constructor(options) {
+    super(options)
   }
-  _transform(buf, enc, next) {
-    const word = buf.toString().toUpperCase()
+  _transform(chunk, encoding, callback) {
+    const word = chunk.toString().toUpperCase()
     this.push(morse.encode(word) + '\n\n')
-    next()
+    callback()
   }
 }
 
 process.stdin
   .pipe(Transform({
     objectMode: true,
-    transform: function (buf, enc, next) {
-      next(null, buf.toString().replace(/\n/g, ''))
+    transform: function (chunk, encoding, callback) {
+      callback(null, chunk.toString().replace(/\n/g, ''))
     }
   }))
   .pipe(new Morsify())
