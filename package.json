@@ -18,7 +18,9 @@
   "homepage": "https://github.com/aylizhiyuan/slow-optimization#readme",
   "dependencies": {
     "bluebird": "^3.7.2",
+    "buffer-crc32": "^0.2.13",
     "bunyan": "^1.8.14",
+    "crc": "^3.8.0",
     "crc32-stream": "^4.0.0",
     "cron": "^1.8.2",
     "daemonize2": "^0.4.2",
@@ -26,6 +28,7 @@
     "express": "^4.17.1",
     "log4js": "^6.3.0",
     "mongoose": "^5.10.5",
+    "normalize-path": "^3.0.0",
     "readable-stream": "^3.6.0",
     "v8-profiler": "^5.7.0"
   }
