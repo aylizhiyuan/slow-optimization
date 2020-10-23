@@ -31,6 +31,7 @@
     "node-native-zip": "^1.1.0",
     "normalize-path": "^3.0.0",
     "readable-stream": "^3.6.0",
-    "v8-profiler": "^5.7.0"
+    "v8-profiler": "^5.7.0",
+    "worker-farm": "^1.7.0"
   }
 }
