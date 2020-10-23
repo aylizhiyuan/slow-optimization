@@ -26,6 +26,7 @@
     "daemonize2": "^0.4.2",
     "easy-monitor": "^2.2.8",
     "express": "^4.17.1",
+    "forever-monitor": "^3.0.1",
     "log4js": "^6.3.0",
     "mongoose": "^5.10.5",
     "node-native-zip": "^1.1.0",
