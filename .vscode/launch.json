@@ -5,6 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            // 这一种是启动了进程后开始调试
+            "name": "Attach by Process ID",
+            "processId": "${command:PickProcess}",
+            "request": "attach",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        
+        {
+            // 这个是根据IDE启动的调试
             "type": "node",
             "request": "launch",
             "name": "启动程序",
