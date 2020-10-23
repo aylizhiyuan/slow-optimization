@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "启动程序",
             "skipFiles": ["<node_internals>/**"],
-            "program": "${workspaceFolder}/index.js"
+            "program": "${workspaceFolder}/node压缩流的简单实现/example.js"
         }
     ]
 }
