@@ -18,6 +18,7 @@
   "homepage": "https://github.com/aylizhiyuan/slow-optimization#readme",
   "dependencies": {
     "bluebird": "^3.7.2",
+    "bree": "^3.3.0",
     "buffer-crc32": "^0.2.13",
     "bunyan": "^1.8.14",
     "crc": "^3.8.0",
