@@ -9,15 +9,25 @@ const server_config = require('./server_config.json');
 const taskList = server_config.cronList;
 
 
+
 const app = express();
 var task = [];
 
-
+app.get('/api',function(req,res){
+    console.log("此路径为了对定时任务进行增删改查操作....")
+})
+app.get("/web",function(req,res){
+    console.log("此路径是为了提供一个web界面用来管理所有的定时任务")
+})
+// 定时任务服务器启动的时候将所有的定时任务启动
+// 考虑两个问题,当子进程的任务出现失败的时候如何重启?
+// 当子进程的任务报错的时候如何及时发现？
 for(let i=0;i<taskList.length;i++){
     let taskPath = path.join(__dirname + taskList[i]);
     task[i] = child_process.fork(taskPath);
+    console.log(task[i]);
     task[i].on('message',function(msg){
-        // 子进程发来消息
+        // 处理子进程发来消息
         console.log(msg);
     })
     task[i].on('close',function(){
@@ -38,7 +48,7 @@ app.listen(8888,function(){
 })
 
 
-// 向子进程发送消息
+// 向子进程发送消息,通常就是关闭某个子进程的时候
 // task.send("我是父进程....");
 
 // 保证主进程不会退出....类似于全局范围内的try{}catch(){}
@@ -64,6 +74,7 @@ process.on("SIGINT",function(){
 process.on("SIGTERM",function(){
     try{
         for(let k=0;k<task.length;k++){
+            // 向所有的子进程发送信号
             process.kill(task[k].pid,"SIGKILL");
         }
     }catch(e){

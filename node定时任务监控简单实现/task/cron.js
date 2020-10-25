@@ -23,5 +23,8 @@ process.on('uncaughtException', function (err) {
     // 默认可能process.exit(1)了直接就...
 });
 
+// 重点在于子进程要发送数据给主进程
+
+
 
 
