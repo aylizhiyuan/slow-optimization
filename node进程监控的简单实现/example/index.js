@@ -7,7 +7,7 @@
     "silent": true, // 是否关闭子进程的输出到父进程,true为默认
     'killTree': true,           // 关闭当前进程的时候是否杀死子进程
     'minUptime':2000, // 该进程必须启动的最短时间，否则则永远不启动
-    'spinSleepTime':3000, // 进程重启的时间间隔
+    'spinSleepTime':10000, // 进程重启的时间间隔
   });
   // 当前子进程退出的时候触发
   child.on('exit', function (forever) {

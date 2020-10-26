@@ -2,8 +2,6 @@
 const log4js = require("log4js");
 const express = require("express");
 const fs = require('fs');
-const { readSync } = require("fs");
-const { prependOnceListener } = require("process");
 log4js.addLayout('json', config => function (logEvent) {
   return JSON.stringify(logEvent) + config.separator;
 });

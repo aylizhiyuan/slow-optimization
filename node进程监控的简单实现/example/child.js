@@ -1,3 +1,1 @@
-setInterval(function(){
-    throw new Error("我的错误....");
-},2000)
+throw new Error("任务1失败...")

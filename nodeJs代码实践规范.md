@@ -203,6 +203,128 @@ test()
 ```
 
 
+## 3. 文件注释/函数注释风格规范
+
+每个文件,每个函数都必须有固定的注释风格
+
+koroFileHeader 是一个在vscode中用于生成文件头部注释和函数注释的插件
+
+在vscode配置中搜索关键词可自定义注释的内容
+
+***文件头部注释：Fileheader:custom Made***
+
+```
+// 系统默认的设置,这里需要根据自己的情况填写的就是Author以及LastEditors,其余保持不变,将此设置写入自己的setting.json文件中即可
+
+"fileheader.customMade": {
+    "Descripttion":"",
+    "version":"",
+    "Author":"lizhiyuan", // 写自己的名字
+    "Date":"Do not edit",
+    "LastEditors":"lizhiyuan", // 写自己的名字
+    "LastEditTime":"Do not Edit"
+}
+```
+
+示例
+
+```
+/*
+ * @Date: 2020-04-22 18:39:42
+ * @LastEditors: sunche
+ * @LastEditTime: 2020-04-23 10:06:28
+ * @FilePath: /zhisiyun_new/queue/rabbit_task_api_send_wx_msg_pri.js
+ */
+```
+> 头部注释的快捷键 crtl+alt+i（window）,ctrl+cmd+i (mac)
+
+***函数注释：Fileheader:cursor Mode***
+
+可将光标放到函数上`function`或者是`函数名称`上,使用快捷键,会自动生成函数注释
+
+```
+"fileheader.cursorMode": {
+    "description":"",
+    "param":"",
+    "return":"",
+    "example":""
+}
+```
+> 快捷键：ctrl+alt+t (window), ctrl+alt+t(mac) ,如果遇到快捷键失灵的情况，请参考 https://github.com/OBKoro1/koro1FileHeader/issues/5
+
+示例
+
+```
+        /**
+         * Initializes a newly created cipher.
+         *
+         * @param {number} xformMode Either the encryption or decryption transormation mode constant.
+         * @param {WordArray} key The key.
+         * @param {Object} cfg (Optional) The configuration options to use for this operation.
+         *
+         * @example
+         *
+         *     var cipher = CryptoJS.algo.AES.create(CryptoJS.algo.AES._ENC_XFORM_MODE, keyWordArray, { iv: ivWordArray });
+        */
+
+```
+
+## 4. 业务代码注释原则
+
+koroFileHeader完成了基本的文件注释和函数注释,其余的注释风格需要按照jsDoc来书写
+
+### 1. 核心重要变量的注释
+
+```
+/**
+ * @var {object}
+ * @desc 变量定义
+ * @property {string} json 属性 name 或者 name 属性 用户姓名
+ * @property {string} 30   属性 age  或者 age  属性 用户年龄
+ */
+
+var userInfo = {
+    name: 'json',
+    age: '30'
+}
+```
+
+### 2. 核心常量的注释
+
+```
+/**
+ * @constant {string}
+ * @default #DDD
+ * @desc 常量定义
+ */
+const COLOR_THEME = '#DDD';
+```
+
+### 3. 异步代码的注释
+
+涉及到的异步代码需要简单的描述功能,需要用到单行注释
+
+```
+        // 停用和删除的数据源配置，成长记录全部删除
+        let records = await CusGrowthSourceConfig.find({
+            client: client,
+            pf_config: {$in:pf_configs},
+            status: {$in:['0','2']}
+        }).select('_id');
+        await GrowthRecordSync.remove({
+            client: client,
+            type: "pf_table",
+            eveid: {$in:_.pluck(records, '_id')}
+        })
+        // 删除状态数据源配置，数据源配置全部删除
+        await CusGrowthSourceConfig.remove({
+            client: client,
+            pf_config: {$in:pf_configs},
+            status: '2',
+        });
+```
+
+
 
 
 

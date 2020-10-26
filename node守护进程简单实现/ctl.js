@@ -1,3 +1,10 @@
+/*
+ * @Author: lizhiyuan
+ * @Date: 2020-09-25 10:03:24
+ * @LastEditors: lizhiyuan
+ * @LastEditTime: 2020-10-26 17:14:18
+ */
+
 // 为了支持监控子进程的运行状态和让子进程独立运行,我们使用spawn
 
 const spawn = require('child_process').spawn;
