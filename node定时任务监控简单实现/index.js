@@ -1,3 +1,9 @@
+/*
+ * @Author: lizhiyuan
+ * @Date: 2020-09-25 18:34:26
+ * @LastEditors: lizhiyuan
+ * @LastEditTime: 2020-10-27 12:26:38
+ */
 // 对定时任务要实现监控
 // 1. 首先创建对饮的定时任务
 
@@ -25,7 +31,7 @@ app.get("/web",function(req,res){
 for(let i=0;i<taskList.length;i++){
     let taskPath = path.join(__dirname + taskList[i]);
     task[i] = child_process.fork(taskPath);
-    console.log(task[i]);
+    // console.log(task[i]);
     task[i].on('message',function(msg){
         // 处理子进程发来消息
         console.log(msg);
@@ -82,5 +88,6 @@ process.on("SIGTERM",function(){
     }
     process.exit(1);
 })
+// 添加一个信号
 
 

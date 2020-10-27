@@ -1,3 +1,9 @@
+/*
+ * @Author: lizhiyuan
+ * @Date: 2020-09-28 11:31:28
+ * @LastEditors: lizhiyuan
+ * @LastEditTime: 2020-10-27 12:12:28
+ */
 const CronJob = require('cron').CronJob;
 console.log("开始执行定时任务2....");
 // 向子进程发送消息
@@ -6,7 +12,7 @@ const job = new CronJob('*/10 * * * * *', function() {
         const d = new Date();
         console.log(`pid-${process.pid} 每10秒打印一下当前时间任务:`, d);
         // 当前子进程出问题了....
-        throw new ReferenceError("代码级别的错误....");
+        // throw new ReferenceError("代码级别的错误....");
     } catch (error) {
         console.log(error) //后期考虑更好的方式记录错误日志
     }
