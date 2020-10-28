@@ -2,51 +2,53 @@
  * @Author: lizhiyuan
  * @Date: 2020-09-25 18:34:26
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-10-27 12:26:38
+ * @LastEditTime: 2020-10-28 14:45:08
  */
 // 对定时任务要实现监控
-// 1. 首先创建对饮的定时任务
-
 const child_process = require('child_process');
 const express = require('express');
 var path = require('path');
+
 // 加载配置文件
 const server_config = require('./server_config.json');
-const taskList = server_config.cronList;
+// 初始化需要运行的定时任务列表
+var taskList = server_config.cronList;
+// 子进程列表
+var tasks = [];
 
-
-
+// http服务器监控
 const app = express();
-var task = [];
-
 app.get('/api',function(req,res){
     console.log("此路径为了对定时任务进行增删改查操作....")
 })
 app.get("/web",function(req,res){
     console.log("此路径是为了提供一个web界面用来管理所有的定时任务")
 })
-// 定时任务服务器启动的时候将所有的定时任务启动
-// 考虑两个问题,当子进程的任务出现失败的时候如何重启?
-// 当子进程的任务报错的时候如何及时发现？
+
+
+// 定时任务的启动..
 for(let i=0;i<taskList.length;i++){
-    let taskPath = path.join(__dirname + taskList[i]);
-    task[i] = child_process.fork(taskPath);
-    // console.log(task[i]);
-    task[i].on('message',function(msg){
+    // 保证任务名称的唯一性,坚决不能重复...
+    tasks[i] = child_process.fork('./cron.js',[taskList[i].name],{
+        env:{
+            taskPath:taskList[i].path,
+            taskFile:taskList[i].file,
+            taskName:taskList[i].name,
+            taskArgs:taskList[i].args,
+            taskRange:taskList[i].range
+        }
+    });
+    // 定点记录每个定时任务进程的启动信息
+    tasks[i]._name = taskList[i].name;
+    tasks[i]._path = taskList[i].path;
+    tasks[i]._file = taskList[i].file;
+    tasks[i]._range = taskList[i].range;
+    tasks[i].on('message',function(msg){
         // 处理子进程发来消息
         console.log(msg);
     })
-    task[i].on('close',function(){
-        // 子进程关闭的情况
-        console.log(`pid-${task[i].pid} 关闭...`)
-    })
-    task[i].on('error',function(){
-        // 子进程失败
-        console.log(`pid-${task[i].pid} 失败...`)
-    })
-    task[i].on('exit',function(){
-        // 子进程退出(几乎不会主动退出)
-        console.log(`pid-${task[i].pid} 退出...`)
+    tasks[i].on('exit',function(){
+        // 进程因为各种原因失败退出的时候....    
     })
 }
 app.listen(8888,function(){
@@ -63,31 +65,67 @@ process.on('uncaughtException', function (err) {
     console.log('Caught exception: ' + err.stack);
 });
 
-// 父进程是不不会主动退出的，不用考虑process.on(exit)
 // 当你向父进程发送杀死的信号的时候，需要将所有的子进程全部关闭
 process.on("SIGINT",function(){
     try{
-        for(let j=0;j<task.length;j++){
-            console.log(task[j].pid);
-            process.kill(task[j].pid,"SIGKILL");
+        for(let j=0;j<tasks.length;j++){
+            process.kill(tasks[j].pid,"SIGKILL");
         }
     }catch(e){
         process.exit(1);
     }
     process.exit(1);
 })
+
 // 当向父进程发送kill命令信号的时候,需要将所有的子进程全部关闭
 process.on("SIGTERM",function(){
     try{
-        for(let k=0;k<task.length;k++){
+        for(let k=0;k<tasks.length;k++){
             // 向所有的子进程发送信号
-            process.kill(task[k].pid,"SIGKILL");
+            process.kill(tasks[k].pid,"SIGKILL");
         }
     }catch(e){
         process.exit(1);
     }
     process.exit(1);
 })
-// 添加一个信号
+
+// 添加一个信号 kill -1 pid号
+process.on("SIGHUP",function(){
+    // 先将之前的所有的子进程杀死....这样有利于资源的释放...
+    for(let t=0;t<tasks.length;t++){
+        // 杀死所有存活的进程
+        tasks[t].kill("SIGKILL");
+    }
+    // 内容清空掉，重新生成新的子进程
+    tasks = [];
+    // 然后将新的子进程重启...
+    var newTaskList = require('./server_config.json').cronList;
+    for(let n = 0;n < newTaskList.length;n++){
+        tasks[n] = child_process.fork('./cron.js',[newTaskList[n].name],{
+            env:{
+                taskPath:newTaskList[n].path,
+                taskFile:newTaskList[n].file,
+                taskName:newTaskList[n].name,
+                taskArgs:newTaskList[n].args,
+                taskRange:newTaskList[n].range
+            }
+        });
+        // 定点记录每个定时任务进程的启动信息
+        tasks[n]._name = newTaskList[n].name;
+        tasks[n]._path = newTaskList[n].path;
+        tasks[n]._file = newTaskList[n].file;
+        tasks[n]._range = newTaskList[n].range;
+        tasks[n].on('message',function(msg){
+            // 处理子进程发来消息
+            console.log(msg);
+        })
+        tasks[n].on('exit',function(){
+            // 进程因为各种原因失败退出的时候....    
+        })
+    }
+})
+
+
 
 
