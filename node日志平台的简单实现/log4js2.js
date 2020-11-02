@@ -1,3 +1,9 @@
+/*
+ * @Author: lizhiyuan
+ * @Date: 2020-10-22 17:05:14
+ * @LastEditors: lizhiyuan
+ * @LastEditTime: 2020-10-29 12:03:57
+ */
 // 容器化单进程部署方式
 const log4js = require("log4js");
 const express = require("express");
@@ -6,7 +12,7 @@ log4js.addLayout('json', config => function (logEvent) {
   return JSON.stringify(logEvent) + config.separator;
 });
 log4js.configure({
-  //输出信息
+  //定义输出类型
   appenders: { 
     out:{ 
       type:"file",
