@@ -324,6 +324,125 @@ const COLOR_THEME = '#DDD';
         });
 ```
 
+## 5. CDN使用规范
+
+泰山系统的cdn走的是网宿科技的cdn,这里配置了只要是访问www-cache.zhisiyun.com的域名都会走缓存,如果假设你的js文件需要被缓存的话可以加上这个域名,一般我们会对那些改动频率较少的加上这个域名
+
+假设用户第一次访问的时候，没有发现有这个缓存的话，会直接回源访问我们本地的服务器，并将静态的资源缓存下来,下次访问的时候就直接走缓存了....
+
+理论上,需要主动加上www-cache.zhisiyun.com域名的资源:
+
+- jquery的各种插件/UI插件/组件
+- 外部加载的框架/类库/图片/文字/媒体资源
+- css文件
+
+不需要主动加上www.cache.zhisiyun.com域名的资源:
+
+- 修改频率较高的js文件,业务逻辑文件
+
+但其实即便是www.zhisiyun.com的服务器访问也会走cdn,会走一条比较高的链路，但是资源不会被缓存,只不过速度会快一些
+
+
+
+```css
+link(href='#{cdn_domain_name}/assets/plugins/bootstrap/css/bootstrap.min.css', rel='stylesheet', type='text/css')
+link(href='#{cdn_domain_name}/assets/plugins/bootstrap/css/bootstrap-responsive.min.css', rel='stylesheet', type='text/css')
+link(href='#{cdn_domain_name}/assets/plugins/font-awesome/css/font-awesome.min.css', rel='stylesheet', type='text/css')
+link(href='#{cdn_domain_name}/assets/css/style-metro.css', rel='stylesheet', type='text/css')
+```
+
+```js
+script(src='#{cdn_domain_name}/assets/plugins/jquery-3.3.1.min.js', type='text/javascript')
+script(src='#{cdn_domain_name}/assets/plugins/jquery-migrate-3.0.1.min.js', type='text/javascript')
+script(src='#{cdn_domain_name}/assets/plugins/bootstrap/js/bootstrap.min.js', type='text/javascript')
+```
+
+这里的静态资源已经被nginx重新定位了,看下目前的配置信息就知道了
+
+```
+location ^~ /pagejs/ { root /var/data/zhisiyun/public/; }
+location ^~ /js/ { root /var/data/zhisiyun/public/; }
+location ^~ /css/ { root /var/data/zhisiyun/public/; }
+location ^~ /img/ { root /var/data/zhisiyun/public/; }
+location ^~ /download/ { root /var/data/zhisiyun/public/; }
+location ^~ /enneagram-report/ { root /var/data/zhisiyun/public/; }
+location ^~ /mbti-report/ { root /var/data/zhisiyun/public/; }
+location ^~ /apps/ { root /var/data/zhisiyun/public/; }
+location ^~ /help/ { root /var/data/zhisiyun/public/; }
+location ^~ /assets/ { root /var/data/zhisiyun/client/; }
+location ^~ /bower_components/ { root /var/data/zhisiyun/client/; }
+location ^~ /m/ { root /var/data/zhisiyun/client/; }
+location / { proxy_pass http://ensure/; }
+```
+
+不需要被缓存的文件可以参考下面的写法(直接走本地服务器的相对路径访问就可以了):
+
+```js
+script(src='#{path_js_page}/ltyle/js-part/dtable.js')
+// 不再推荐使用furl这种(旧方式)
+script(src=furl('#{path_js_page}/ltyle/js-part/defined.js'))
+```
+
+为了避免被缓存，可以在js文件后面加入动态参数，防止缓存
+```css
+// 以当前发布的日期为准
+link(href='#{cdn_domain_name}/assets/css/iconfont1.css?v=20180410', rel='stylesheet', type='text/css') 
+```
+
+
+## 6. 域名使用规范
+
+- css文件中不允许使用绝对路径（域名）加载图片
+
+```
+// 错误
+background: url('https://www-cache.zhisiyun.com/img/no-video.png') #f2f2f2 no-repeat center;
+
+// 正确
+background: url('../../../public/img/no-video.png') #f2f2f2 no-repeat center;
+```
+
+- jade文件中加载任何外部的资源，走CDN的写法
+
+```
+// 图片
+img.img_five(src='#{cdn_domain_name}/assets/img/500.png')
+
+// css文件
+ link(href='#{cdn_domain_name}/assets/css/pages/error.css', rel='stylesheet', type='text/css')
+
+// js文件
+script(src='#{cdn_domain_name}/assets/plugins/jquery-3.3.1.min.js', type='text/javascript')
+
+
+// 不走CDN的写法,针对变动较大的文件,统一的放在pagejs中去
+script(type="text/javascript", src="#{path_js_page}/wxapp.001_04.js?v=20200331")
+
+```
+
+- 后端js文件中的写法
+
+```
+// *****不允许的写法**** 直接将域名写死,导致迁移的时候会非常的麻烦
+var url = 'http://www.zhisiyun.com/wxapp/001/react_face_emp';
+
+// 正确的写法,从config.json配置文件中读入域名信息
+var url = website_domain_name + '/wxapp/001/react_face_emp';
+```
+
+- 前端js文件中的写法
+
+```
+前端使用到当前域名的js文件中不能直接写死某域名，使用location.host动态获取当前的域名信息后使用
+
+// 实例
+
+host: window.location.host ? window.location.host : 'www.zhisiyun.com'
+
+// 理论上不带协议
+
+```
+
 
 
 
