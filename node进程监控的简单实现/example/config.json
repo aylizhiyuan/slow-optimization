@@ -18,7 +18,7 @@
             "cron_list":[
 
             ],
-            "mongodb_uri":"mongodb://172.16.0.229:30000/gisiensure?poolSize=1",
+            "mongodb_uri":"",
             "log_config":{
                 "filename":"",
                 "level":"debug",
@@ -30,7 +30,7 @@
             "cron_list":[
                 
             ],
-            "mongodb_uri":"mongodb://172.16.0.229:30000/gisiensure?poolSize=1",
+            "mongodb_uri":"",
             "log_config":{
                 "filename":"/var/data/logs/cron.log",
                 "level":"debug",
