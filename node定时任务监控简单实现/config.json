@@ -1,0 +1,77 @@
+{
+    "log_config":{
+        "development":{
+            "filename":"",
+            "level":"debug",
+            "category":["local_out"],
+            "enableCallStack":true
+        },
+        "production":{
+            "filename":"/var/data/logs/app.log",
+            "level":"debug",
+            "category":["everyday_file"],
+            "enableCallStack":true
+        }
+    },
+    "cron_config":{
+        "development":{
+            "cron_list":[
+                {
+                    "name":"cron1",
+                    "path":"task",
+                    "file":"demo.js",
+                    "range":"*/1 * * * * *"
+                },
+                {
+                    "name":"cron2",
+                    "path":"task",
+                    "file":"demo.js",
+                    "range":"*/1 * * * * *"
+                }
+            ],
+            "mongodb_uri":"",
+            "log_config":{
+                "filename":"",
+                "level":"debug",
+                "category":["local_out"],
+                "enableCallStack":true
+            }
+        },
+        "production":{
+            "cron_list":[
+                
+            ],
+            "mongodb_uri":"",
+            "log_config":{
+                "filename":"/var/data/logs/cron.log",
+                "level":"debug",
+                "category":["everyday_file"],
+                "enableCallStack":true
+            }
+        }
+    },
+    "rabbitmq_config":{
+        "development":{
+            "rabbitmq_list":[
+
+            ],
+            "log_config":{
+                "filename":"",
+                "level":"debug",
+                "category":["local_out"],
+                "enableCallStack":true
+            }
+        },
+        "production":{
+            "rabbitmq_list":[
+
+            ],
+            "log_config":{
+                "filename":"/var/data/logs/rabbitmq.log",
+                "level":"debug",
+                "category":["everyday_file"],
+                "enableCallStack":true
+            }
+        }
+    }
+}

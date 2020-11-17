@@ -1,14 +1,39 @@
 /*
+ * @Descripttion: 使用cron模块的定时任务
+ * @version: 
  * @Author: lizhiyuan
- * @Date: 2020-09-25 18:34:37
+ * @Date: 2020-11-10 10:13:55
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-10-28 10:01:09
- */ 
-// 子进程收到消息的时候的处理...
-process.on("message",function(msg){
-    console.log(`子进程收到消息: ${msg}`);
-})
+ * @LastEditTime: 2020-11-17 16:30:58
+ */
+// 定时任务的日志配置文件
+const log4js = require("log4js");
+const env = process.env.NODE_ENV || 'development';
+const log_config = require('./config').cron_config[env].log_config;
 
+
+// 日志模块的JSON输出格式的设置,可自定内容添加
+log4js.addLayout('json', config => function (logEvent) {
+    return JSON.stringify(logEvent) + config.separator;
+});
+// 日志配置信息
+log4js.configure({
+    appenders: {
+        // 作为本地输出
+        local_out:{
+             type: 'stdout'
+        },  
+        // 线上输出
+        everyday_file:{ 
+            type:"dateFile",
+            filename:log_config.filename,
+            layout: { type: 'json', separator: ',' }
+        },
+    },
+    categories: {
+        default:{ appenders: log_config.category, level: log_config.level,enableCallStack:log_config.enableCallStack},
+    }
+});
 const CronJob = require('cron').CronJob;
 const path = require('path');
 const fs = require('fs');
@@ -16,7 +41,7 @@ const taskPath = process.env.taskPath.toString();
 const taskFile = process.env.taskFile.toString();
 const taskName = process.env.taskName.toString();
 const taskRange = process.env.taskRange.toString();
-
+const logger = log4js.getLogger();
 // 检查是否是一个合法的文件，并可读
 function isFile(path){
     try{
@@ -28,7 +53,7 @@ function isFile(path){
 }
 // 检查是否是一个函数
 function isFunction(obj){
-    return Object.prototype.toString.call(obj)==='[object Function]'
+    return Object.prototype.toString.call(obj) === '[object Function]'
 }
 // try{}catch(e){}只针对当前页面....
 try {
@@ -41,17 +66,15 @@ try {
             const job = new CronJob(taskRange, task_func);
             job.start();
         }else{
-            console.log("不是一个正常的函数....");
+            logger.error(`${task}文件中存在有问题的函数`);
             process.exit(0);
         }
     }else{
-        console.log("文件路径错误...");
+        logger.error(`${task}不是一个合格的文件路径`);
         process.exit(0);
     } 
 }catch(e){
     // 当前执行函数的时候一旦发生错误,直接退出...
-    console.log(e); // 到时候直接推给日志平台...
+    logger.error("进程失败" + e);
     process.exit(0);
 }
-
-

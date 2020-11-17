@@ -1,28 +1,31 @@
 /*
+ * @Descripttion: 新的clis定时任务监控系统
+ * @version: 
  * @Author: lizhiyuan
- * @Date: 2020-09-25 18:34:26
+ * @Date: 2020-11-10 10:13:10
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-10-28 14:45:08
+ * @LastEditTime: 2020-11-17 16:30:41
  */
-// 对定时任务要实现监控
 const child_process = require('child_process');
 const express = require('express');
-var path = require('path');
 
+const env = process.env.NODE_ENV || 'development';
 // 加载配置文件
-const server_config = require('./server_config.json');
+const cron_config = require('./config').cron_config[env];
 // 初始化需要运行的定时任务列表
-var taskList = server_config.cronList;
+var taskList = cron_config.cron_list;
 // 子进程列表
 var tasks = [];
 
+
 // http服务器监控
 const app = express();
+
 app.get('/api',function(req,res){
     console.log("此路径为了对定时任务进行增删改查操作....")
 })
 app.get("/web",function(req,res){
-    console.log("此路径是为了提供一个web界面用来管理所有的定时任务")
+    console.log("此路径是为了提供一个web界面用来管理所有的定时任务...")
 })
 
 
@@ -35,7 +38,8 @@ for(let i=0;i<taskList.length;i++){
             taskFile:taskList[i].file,
             taskName:taskList[i].name,
             taskArgs:taskList[i].args,
-            taskRange:taskList[i].range
+            taskRange:taskList[i].range,
+            NODE_ENV:env,
         }
     });
     // 定点记录每个定时任务进程的启动信息
@@ -43,13 +47,6 @@ for(let i=0;i<taskList.length;i++){
     tasks[i]._path = taskList[i].path;
     tasks[i]._file = taskList[i].file;
     tasks[i]._range = taskList[i].range;
-    tasks[i].on('message',function(msg){
-        // 处理子进程发来消息
-        console.log(msg);
-    })
-    tasks[i].on('exit',function(){
-        // 进程因为各种原因失败退出的时候....    
-    })
 }
 app.listen(8888,function(){
     console.log("定时任务监控系统开启.....");
@@ -100,7 +97,7 @@ process.on("SIGHUP",function(){
     // 内容清空掉，重新生成新的子进程
     tasks = [];
     // 然后将新的子进程重启...
-    var newTaskList = require('./server_config.json').cronList;
+    var newTaskList = require('./config').cron_config[env].cron_list;
     for(let n = 0;n < newTaskList.length;n++){
         tasks[n] = child_process.fork('./cron.js',[newTaskList[n].name],{
             env:{
@@ -108,7 +105,8 @@ process.on("SIGHUP",function(){
                 taskFile:newTaskList[n].file,
                 taskName:newTaskList[n].name,
                 taskArgs:newTaskList[n].args,
-                taskRange:newTaskList[n].range
+                taskRange:newTaskList[n].range,
+                NODE_ENV:env
             }
         });
         // 定点记录每个定时任务进程的启动信息
@@ -116,16 +114,5 @@ process.on("SIGHUP",function(){
         tasks[n]._path = newTaskList[n].path;
         tasks[n]._file = newTaskList[n].file;
         tasks[n]._range = newTaskList[n].range;
-        tasks[n].on('message',function(msg){
-            // 处理子进程发来消息
-            console.log(msg);
-        })
-        tasks[n].on('exit',function(){
-            // 进程因为各种原因失败退出的时候....    
-        })
     }
 })
-
-
-
-

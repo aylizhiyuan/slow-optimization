@@ -1,1 +1,0 @@
-throw new Error("任务1失败...")

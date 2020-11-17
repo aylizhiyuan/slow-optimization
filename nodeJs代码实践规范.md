@@ -443,6 +443,78 @@ host: window.location.host ? window.location.host : 'www.zhisiyun.com'
 
 ```
 
+## 7.日志输出规范
+
+1.  主进程日志输出规范
+
+主进程日志的输出配置在config.json中,默认本地development中，直接将logger的信息打印到控制台中去,生产环境下,每天会产生一个固定的文件输出
+
+```
+// 配置文件信息 -config.json
+"log_config":{
+    "development":{
+        "filename":"",
+        "level":"debug", // trace < debug < info < error < warn < error
+        "category":["local_out"],
+        "enableCallStack":true
+    },
+    "production":{
+        "filename":"/var/data/logs/app.log",
+        "level":"debug", // 默认输出的级别为debug级别以上
+        "category":["everyday_file"],
+        "enableCallStack":true
+    }
+},
+```
+
+调用的时候可直接在路由处理文件中调用log4js模块
+
+```js
+
+const log4js = require('log4js');
+const logger = log4js.getLogger();
+
+// 打印数据
+var obj = {name:"sdfsdf",age:323,text:{firstname:"12",lastname:"sdfsdf"}}
+logger.info("打印内容..",obj);
+
+// 打印错误
+try{
+    var people =  people.findById('test');
+}catch(e){
+    logger.error('错误的对象'+ e); // 错误对象转化为字符串打印输出
+    res.end("hello world");
+}
+```
+
+2.  队列日志输出规范
+
+```js
+
+```
+
+
+
+
+3.  定时任务输出规范
+
+```js
+// 定时任务的输出规范
+const log4js = require('log4js'); //调用log4js模块
+const logger = log4js.getLogger(); // 调用getLogger API
+function cron1(){
+    logger.info('打印第一个任务...'); // 调用打印
+}
+function cron2(){
+    logger.info('打印第二个任务...') // 调用打印
+}
+module.exports.cron1 = cron1
+module.exports.cron2 = cron2
+```
+
+
+
+
 
 
 

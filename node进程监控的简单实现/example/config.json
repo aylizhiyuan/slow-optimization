@@ -1,0 +1,100 @@
+{
+    "log_config":{
+        "development":{
+            "filename":"",
+            "level":"debug",
+            "category":["local_out"],
+            "enableCallStack":true
+        },
+        "production":{
+            "filename":"/var/data/logs/app.log",
+            "level":"debug",
+            "category":["everyday_file"],
+            "enableCallStack":true
+        }
+    },
+    "cron_config":{
+        "development":{
+            "cron_list":[
+
+            ],
+            "mongodb_uri":"mongodb://172.16.0.229:30000/gisiensure?poolSize=1",
+            "log_config":{
+                "filename":"",
+                "level":"debug",
+                "category":["local_out"],
+                "enableCallStack":true
+            }
+        },
+        "production":{
+            "cron_list":[
+                
+            ],
+            "mongodb_uri":"mongodb://172.16.0.229:30000/gisiensure?poolSize=1",
+            "log_config":{
+                "filename":"/var/data/logs/cron.log",
+                "level":"debug",
+                "category":["everyday_file"],
+                "enableCallStack":true
+            }
+        }
+    },
+    "rabbitmq_config":{
+        "development":{
+            "rabbitmq_list":[
+                {
+                    "path": "queue",
+                    "file": "child.js",
+                    "max": 10,
+                    "silent": true,
+                    "killTree": true,
+                    "minUptime": 2000,
+                    "spinSleepTime": 2000
+                },
+                {
+                    "path": "queue",
+                    "file": "child2.js",
+                    "max": 10,
+                    "silent": true,
+                    "killTree": true,
+                    "minUptime": 2000,
+                    "spinSleepTime": 2000
+                }
+            ],
+            "log_config":{
+                "filename":"",
+                "level":"debug",
+                "category":["local_out"],
+                "enableCallStack":true
+            }
+        },
+        "production":{
+            "rabbitmq_list":[
+                {
+                    "path": "queue",
+                    "file": "child.js",
+                    "max": 10,
+                    "silent": true,
+                    "killTree": true,
+                    "minUptime": 2000,
+                    "spinSleepTime": 2000
+                },
+                {
+                    "path": "queue",
+                    "file": "child2.js",
+                    "max": 10,
+                    "silent": true,
+                    "killTree": true,
+                    "minUptime": 2000,
+                    "spinSleepTime": 2000
+                }
+            ],
+            "log_config":{
+                "filename":"/var/data/logs/rabbitmq.log",
+                "level":"debug",
+                "category":["everyday_file"],
+                "enableCallStack":true
+            }
+        }
+    }
+}

@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-10-28 17:38:32
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-13 10:13:25
+ * @LastEditTime: 2020-11-13 10:46:05
  */
 var stream = require('stream');
 var util = require('util');
@@ -40,7 +40,7 @@ function LineStream(options){
     // 继承转化流
     stream.Transform.call(this,options);
     options = options || {};
-    this._readableState.objectMode = true;
+    this._readableState.objectMode = true; //对象流开启
     this._lineBuffer = [];
     this._keepEmptyLines = options._keepEmptyLines || false;
     this._lastChunkEndedWithCR = false;
@@ -68,6 +68,7 @@ LineStream.prototype._transform = function(chunk,encoding,done){
         chunk = chunk.toString(encoding);
     }
     this._chunkEncoding = encoding;
+    // 按行切成数组
     var lines = chunk.split(/\r\n|[\n\v\f\r\x85\u2028\u2029]/g); // 根据换行来切换
     if(this._lastChunkEndedWithCR && chunk[0] == '\n'){
         lines.shift();
@@ -84,6 +85,7 @@ LineStream.prototype._pushBuffer = function(encoding,keep,done){
     while(this._lineBuffer.length > keep){
         var line = this._lineBuffer.shift();
         if(this._keepEmptyLines || line.length > 0){
+            // 将每一行的数据通过push方法加入到可读流中即可.....
             if(!this.push(this._reencode(line,encoding))){
                 var self = this;
                 timers.setImmediate(function(){

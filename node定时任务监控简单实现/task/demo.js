@@ -2,26 +2,16 @@
  * @Author: lizhiyuan
  * @Date: 2020-10-27 14:26:59
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-10-28 11:07:12
+ * @LastEditTime: 2020-11-17 16:31:31
  */
-function task1(){
-    try{
-        console.log("第一个定时任务...")
-    }catch(e){
-        // 保证报错的进程直接退出
-        process.exit(0);
-    }
+// 定时任务的输出规范
+const log4js = require('log4js'); //调用log4js模块
+const logger = log4js.getLogger(); // 调用getLogger API
+function cron1(){
+    logger.info('打印第一个任务...'); // 调用打印
 }
-function task2(){
-    try{
-       console.log("第二个定时任务...")
-       setTimeout(function(){
-           throw new Error("第二个定时任务失败...")
-       },2000)
-    }catch(e){
-        // 保证报错的进程直接退出
-        process.exit(0);
-    }
+function cron2(){
+    logger.info('打印第二个任务...') // 调用打印
 }
-module.exports.task1 = task1
-module.exports.task2 = task2
+module.exports.cron1 = cron1
+module.exports.cron2 = cron2
