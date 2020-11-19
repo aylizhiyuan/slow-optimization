@@ -489,7 +489,42 @@ try{
 
 2.  队列日志输出规范
 
-每个队列都需要独立的输出日志文件,需要每个人输出到/var/data/logs中去
+每个队列都需要独立的输出日志文件,需要每个人输出到/var/data/logs/rabbitmq中去
+
+```js
+const log4js = require('log4js');
+const env = process.env.NODE_ENV || 'development'
+const log_config = require('../config.json').rabbitmq_config[env].log_config;
+// 日志模块的JSON输出格式的设置,可自定内容添加
+log4js.addLayout('json', config => function (logEvent) {
+    return JSON.stringify(logEvent) + config.separator;
+});
+// 日志配置信息
+log4js.configure({
+    appenders: {
+        // 作为本地输出
+        local_out:{
+             type: 'stdout'
+        },  
+        // 线上输出
+        everyday_file:{ 
+            type:"dateFile",
+            filename:log_config.filename,
+            layout: { type: 'json', separator: ',' }
+        },
+    },
+    categories: {
+        default:{ appenders: log_config.category, level: log_config.level,enableCallStack:log_config.enableCallStack},
+    }
+});
+
+const logger = log4js.getLogger();
+
+// 队列代码中的使用示例
+setInterval(function(){
+    logger.info('第一个任务开始工作...');
+},1000)
+```
 
 
 3.  定时任务输出规范
@@ -508,7 +543,6 @@ module.exports.cron1 = cron1
 module.exports.cron2 = cron2
 ```
 
-## 8.队列创建规范代码
 
 
 
