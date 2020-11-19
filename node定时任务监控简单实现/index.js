@@ -4,7 +4,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-10 10:13:10
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-19 11:43:35
+ * @LastEditTime: 2020-11-19 12:14:41
  */
 const child_process = require('child_process');
 const express = require('express');
@@ -14,6 +14,8 @@ const env = process.env.NODE_ENV || 'development';
 const cron_config = require('./config').cron_config[env];
 // 初始化需要运行的定时任务列表
 var taskList = cron_config.cron_list;
+// 是否需要关闭子进程的输出
+var silent = cron_config.silent;
 // 子进程列表
 var tasks = [];
 
@@ -41,7 +43,7 @@ for(let i=0;i<taskList.length;i++){
             taskRange:taskList[i].range,
             NODE_ENV:env,
         }, 
-        // silent 是否关闭子进程的输出到父进程
+        silent:silent
     });
     // 定点记录每个定时任务进程的启动信息
     tasks[i]._name = taskList[i].name;
@@ -108,7 +110,8 @@ process.on("SIGHUP",function(){
                 taskArgs:newTaskList[n].args,
                 taskRange:newTaskList[n].range,
                 NODE_ENV:env
-            }
+            },
+            silent:silent
         });
         // 定点记录每个定时任务进程的启动信息
         tasks[n]._name = newTaskList[n].name;

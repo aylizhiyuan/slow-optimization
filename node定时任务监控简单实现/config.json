@@ -35,7 +35,8 @@
                 "level":"debug",
                 "category":["local_out"],
                 "enableCallStack":true
-            }
+            },
+            "silent":false
         },
         "production":{
             "cron_list":[
@@ -58,7 +59,8 @@
                 "level":"debug",
                 "category":["everyday_file"],
                 "enableCallStack":true
-            }
+            },
+            "silent":true
         }
     },
     "rabbitmq_config":{

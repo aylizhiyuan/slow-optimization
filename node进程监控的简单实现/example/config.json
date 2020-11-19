@@ -74,7 +74,7 @@
                     "path": "queue",
                     "file": "child.js",
                     "max": 10,
-                    "silent": false,
+                    "silent": true,
                     "killTree": true,
                     "minUptime": 2000,
                     "spinSleepTime": 2000
@@ -83,7 +83,7 @@
                     "path": "queue",
                     "file": "child2.js",
                     "max": 10,
-                    "silent": false,
+                    "silent": true,
                     "killTree": true,
                     "minUptime": 2000,
                     "spinSleepTime": 2000
