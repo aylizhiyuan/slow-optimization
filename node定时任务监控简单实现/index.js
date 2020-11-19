@@ -4,7 +4,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-10 10:13:10
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-17 16:30:41
+ * @LastEditTime: 2020-11-19 11:43:35
  */
 const child_process = require('child_process');
 const express = require('express');
@@ -40,7 +40,8 @@ for(let i=0;i<taskList.length;i++){
             taskArgs:taskList[i].args,
             taskRange:taskList[i].range,
             NODE_ENV:env,
-        }
+        }, 
+        // silent 是否关闭子进程的输出到父进程
     });
     // 定点记录每个定时任务进程的启动信息
     tasks[i]._name = taskList[i].name;

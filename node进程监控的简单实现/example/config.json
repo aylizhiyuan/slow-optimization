@@ -32,7 +32,7 @@
             ],
             "mongodb_uri":"",
             "log_config":{
-                "filename":"/var/data/logs/cron.log",
+                "filename":"logs/cron.log",
                 "level":"debug",
                 "category":["everyday_file"],
                 "enableCallStack":true
@@ -46,7 +46,7 @@
                     "path": "queue",
                     "file": "child.js",
                     "max": 10,
-                    "silent": true,
+                    "silent": false,
                     "killTree": true,
                     "minUptime": 2000,
                     "spinSleepTime": 2000
@@ -55,7 +55,7 @@
                     "path": "queue",
                     "file": "child2.js",
                     "max": 10,
-                    "silent": true,
+                    "silent": false,
                     "killTree": true,
                     "minUptime": 2000,
                     "spinSleepTime": 2000
@@ -74,7 +74,7 @@
                     "path": "queue",
                     "file": "child.js",
                     "max": 10,
-                    "silent": true,
+                    "silent": false,
                     "killTree": true,
                     "minUptime": 2000,
                     "spinSleepTime": 2000
@@ -83,14 +83,14 @@
                     "path": "queue",
                     "file": "child2.js",
                     "max": 10,
-                    "silent": true,
+                    "silent": false,
                     "killTree": true,
                     "minUptime": 2000,
                     "spinSleepTime": 2000
                 }
             ],
             "log_config":{
-                "filename":"/var/data/logs/rabbitmq.log",
+                "filename":"logs/rabbitmq.log",
                 "level":"debug",
                 "category":["everyday_file"],
                 "enableCallStack":true

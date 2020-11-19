@@ -39,11 +39,22 @@
         },
         "production":{
             "cron_list":[
-                
+                {
+                    "name":"cron1",
+                    "path":"task",
+                    "file":"demo.js",
+                    "range":"*/1 * * * * *"
+                },
+                {
+                    "name":"cron2",
+                    "path":"task",
+                    "file":"demo.js",
+                    "range":"*/1 * * * * *"
+                }
             ],
             "mongodb_uri":"",
             "log_config":{
-                "filename":"/var/data/logs/cron.log",
+                "filename":"logs/cron.log",
                 "level":"debug",
                 "category":["everyday_file"],
                 "enableCallStack":true

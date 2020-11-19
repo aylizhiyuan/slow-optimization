@@ -489,11 +489,7 @@ try{
 
 2.  队列日志输出规范
 
-```js
-
-```
-
-
+每个队列都需要独立的输出日志文件,需要每个人输出到/var/data/logs中去
 
 
 3.  定时任务输出规范
@@ -511,6 +507,8 @@ function cron2(){
 module.exports.cron1 = cron1
 module.exports.cron2 = cron2
 ```
+
+## 8.队列创建规范代码
 
 
 
