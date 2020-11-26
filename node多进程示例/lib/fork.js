@@ -2,20 +2,22 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-20 16:30:48
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-20 17:59:23
+ * @LastEditTime: 2020-11-20 18:08:14
  */
 const childProcess = require('child_process');
 const childModule = require.resolve('./child/index');
 function fork(forkModule,workerOptions){
-    // 主进程fork的时候
+    // 主进程fork的时候,将debug和inspect参数过滤掉
     let filterArgs = process.execArgv.filter(function(v){
         return !(/^--(debug|inspect)/).test(v)
     })
+    // 将传递给主进程的参数和用户自己配置的参数综合一下
     let options = Object.assign({
         execArgv:filterArgs,
         env:process.env,
         cwd : process.cwd()
     },workerOptions)
+    // 传递给子进程参数
     let child = childProcess.fork(childModule,process.argv,options)
     child.on('error',function(){
 

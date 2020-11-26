@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-20 16:31:03
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-20 17:40:10
+ * @LastEditTime: 2020-11-20 18:23:15
  */
 let $module
 // 这个应该是fork出来的子进程
@@ -27,6 +27,7 @@ function handle(data){
                 _args[0][key] = e[key]
             })
         }
+        // 将子进程函数中在callback中传递的参数发送给主进程
         process.send({owner:'farm',idx:idx,child:child,args:_args})
     }
     let exec;
@@ -36,6 +37,7 @@ function handle(data){
         exec = $module[method]
     }
     if(!exec) return console.error("NO SUCH METHOD:",method);
+    // 子进程函数中会有一个callback回调函数,回调函数会给主进程发送消息...
     exec.apply(null,args.concat([callback]));
 }
 process.on('message',function(data){
