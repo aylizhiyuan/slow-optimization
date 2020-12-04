@@ -544,6 +544,151 @@ module.exports.cron2 = cron2
 ```
 
 
+## 8.队列fork子进程规范
+
+普通队列要考虑的问题稍微较少,要保证队列的消费过程中一旦出现错误,就要ACK掉它...不要引起其他的消费问题
+
+
+
+队列程序需要fork子进程的时候,主要注意的问题是子进程的失败和父进程的失败要处理.当子进程失败后,父进程要负责ACK掉子进程的msg,当父进程失败的时候,子进程要同时关闭,避免成为孤儿进程.另外,对于rabbitmq的连接也要注意,对于所有有外部连接访问的request请求要有超时的判断,一旦超时,要及时的将这条msg消费掉,不能因此堵着队列...
+
+队列是否可以在正确/错误的情况下,都可以保证快速的消费是此规范的来源
+
+***先来看主进程***
+
+```js
+
+// 忽略引入一些必要的文件
+function start(){
+    // 启动的逻辑
+    // 主要为了处理与rabbitmq服务器的连接,当连接成功后,正常执行
+    // 如果连接都失败了,需要在一个合理的时间内重启并连接....
+    amqp.connect(connstr, function (err, conn) {
+        // var tm_reborn_clock_result_main = require('../clis/tm_reborn').tm_reborn_clock_result_main;
+        if (err) {
+            console.error('[AMQP]', err.message);
+            return setTimeout(start, 7000);
+        }
+        conn.on('error', function (err) {
+            if (err.message !== 'Connection closing') {
+                console.error('[AMQP] conn error', err.message);
+            }
+        });
+        conn.on('close', function () {
+            // console.error(colors.red('[AMQP] reconnecting'));
+            return setTimeout(start, 7000);
+        });
+
+        console.log(colors.green('[AMQP] connected'));
+        amqpConn = conn; //连接句柄
+        // 后续的操作放在连接成功后
+        whenConnected();
+    });
+
+}
+// 这样拆分可独立处理和解决连接问题....当连接成功后再执行逻辑
+function whenConnected(){
+    startWorker();
+}
+
+function startWorker(){
+     amqpConn.createChannel(function (err, ch) {
+        var ex = 'ex_zsy_v1';
+        ch.prefetch(1);
+        ch.assertExchange(ex, 'topic', {
+            durable: true
+        });
+
+        ch.bindQueue('tm_download_attend_detail', ex, 'zsy.tm.attend_detail.download');
+
+        ch.consume(
+            'tm_download_attend_detail',
+            function (msg) {
+                var cond;
+                try {
+                    cond = JSON.parse(msg.content.toString());
+                } catch (e) {
+                    cond = msg.content.toString();
+                }
+                var n = child_process.fork('queue/rabbit_task_tm_download_attend_detail_worker.js');
+                // 子进程发来成功的消息后,ACK掉消息后将通知子进程关掉
+                n.on('message', function (m) {
+                    ch.ack(m.msg);
+                    n.send({ cmd: 'exit' });
+                });
+                // 当子进程失败的时候直接消费掉,不会阻塞.....
+                n.on("close",function(code){
+                    // 当程序不是正常结束的时候直接ACK掉它
+                    // 也可以全程将子进程代码加入到try{}catch{}中,报错的时候调用process.exit(1);
+                    if(code == 1){
+                        ch.ack(msg)
+                    }
+                })
+                // 当父进程退出的时候,随手要将子进程也杀死掉....
+                //控制台自动退出
+                process.on('SIGINT', function (code) {
+                    n.kill();
+                })
+                //控制台ctrl+c
+                process.on('SIGHUP', function (code) {
+                    n.kill();
+                })
+                // shell kill
+                process.on('SIGTERM', function (code) {
+                   n.kill();
+                })
+                // 告知子进程可以开始工作了....
+                n.send({ cmd: 'exec', cond: cond, msg: msg });
+            },
+            {
+                noAck: false
+            }
+        );
+    });
+}
+
+// node 启动的时候执行的函数start函数
+start();
+```
+
+***再来看子进程***
+```js
+ // 子进程中连接了数据库
+
+ // 当父进程通知可以工作的时候，直接开始工作
+ // 当父进程通知关闭的时候,将子进程主动关闭
+ process.on('message', function (m) {
+    // console.log('CHILD start worker:', m);
+    if (m.cmd == 'exit') {
+        process.exit(0);
+    }
+    worker(m);
+});
+
+// 子进程工作实例
+new_attend_detail_download(params, function (err, url) {
+    console.log('new_attend_detail_download end',err,url)
+    QueueTask.findByIdAndUpdate(params.queue_task, {
+        progress: 100,
+        status: '2',
+        result: {
+            url: url,
+            err: err
+        }
+    }, {
+        new: true,
+    }, function (err, task) {
+            // console.log('结束 zsy.tm.attend_detail.download')
+            if (err) {
+                // 如果子进程失败了,则code为1
+                process.send({ code: 1, msg: msg });
+            } else {
+                // 如果子进程成功了,则code为0
+                process.send({ code: 0, msg: msg });
+        }
+    });
+});
+```
 
 
 
