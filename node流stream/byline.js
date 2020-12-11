@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-10-28 17:38:32
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-13 10:46:05
+ * @LastEditTime: 2020-12-11 11:07:05
  */
 var stream = require('stream');
 var util = require('util');
@@ -33,6 +33,7 @@ function createLineStream(readStream,options){
     }
     // 输出到行流中去... ,因为是一个Transform流,可以on(data)消耗
     var ls = new LineStream(options);
+    // 将当前的可读流pipe到转化流中去处理
     readStream.pipe(ls);
     return ls
 }
@@ -40,7 +41,7 @@ function LineStream(options){
     // 继承转化流
     stream.Transform.call(this,options);
     options = options || {};
-    this._readableState.objectMode = true; //对象流开启
+    // this._readableState.objectMode = true; //对象流开启
     this._lineBuffer = [];
     this._keepEmptyLines = options._keepEmptyLines || false;
     this._lastChunkEndedWithCR = false;
@@ -101,11 +102,18 @@ LineStream.prototype._flush = function(done){
     this._pushBuffer(this._chunkEncoding,0,done);
 }
 LineStream.prototype._reencode = function(line,chunkEncoding){
+    // 如果有编码格式设置的话,要进行编码格式的转化
     if(this.encoding && this.encoding != chunkEncoding){
-        return new Buffer(line, chunkEncoding).toString(this.encoding);
+        return Buffer.from(line, chunkEncoding).toString(this.encoding);
     }else if(this.encoding){
         return line;
     }else{
-        return new  Buffer(line,chunkEncoding);
+        // 返回一个新的buffer数组...
+        return Buffer.from(line,chunkEncoding);
     }
 }
+var fs = require('fs');
+var stream = createLineStream(fs.createReadStream('./1.txt')); 
+stream.on('data',function(data){
+    console.log(data.toString());
+})
