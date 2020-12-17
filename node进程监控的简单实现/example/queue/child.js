@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-10-23 17:39:21
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-19 11:51:45
+ * @LastEditTime: 2020-12-16 16:36:40
  */
 const log4js = require('log4js');
 const env = process.env.NODE_ENV || 'development'
@@ -31,7 +31,8 @@ log4js.configure({
 });
 
 const logger = log4js.getLogger();
-
+// var fork = require('child_process').fork;
+// var p = fork('./queue/worker.js');
 setInterval(function(){
     logger.info('第一个任务开始工作...');
 },1000)

@@ -447,10 +447,10 @@ host: window.location.host ? window.location.host : 'www.zhisiyun.com'
 
 1.  主进程日志输出规范
 
-主进程日志的输出配置在config.json中,默认本地development中，直接将logger的信息打印到控制台中去,生产环境下,每天会产生一个固定的文件输出
+主进程日志的输出配置在log_config.js中,默认本地development中，直接将logger的信息打印到控制台中去,生产环境下,每天会产生一个固定的文件输出
 
 ```
-// 配置文件信息 -config.json
+// 配置文件信息 -log_config.js
 "log_config":{
     "development":{
         "filename":"",
@@ -494,7 +494,7 @@ try{
 ```js
 const log4js = require('log4js');
 const env = process.env.NODE_ENV || 'development'
-const log_config = require('../config.json').rabbitmq_config[env].log_config;
+const log_config = require('../log_config')[env].rabbitmq_log;
 // 日志模块的JSON输出格式的设置,可自定内容添加
 log4js.addLayout('json', config => function (logEvent) {
     return JSON.stringify(logEvent) + config.separator;
@@ -621,7 +621,8 @@ function startWorker(){
                     // 当程序不是正常结束的时候直接ACK掉它
                     // 也可以全程将子进程代码加入到try{}catch{}中,报错的时候调用process.exit(1);
                     if(code == 1){
-                        ch.ack(msg)
+                        // ch.ack(msg) // 这里可以选择将父进程退出
+                        process.exit(0);
                     }
                 })
                 // 当父进程退出的时候,随手要将子进程也杀死掉....
@@ -689,6 +690,168 @@ new_attend_detail_download(params, function (err, url) {
     });
 });
 ```
+
+
+## 9. 队列代码规范以及优先级
+
+队列的优先级可通过在创建队列的时候增加`x-max-priority`属性,值可以在0-10中间选择
+
+所有的队列程序禁止使用gfs往数据库中插入图片、文件等操作....
+
+如需上传,使用ali_oss使用
+
+生产者代码示例
+
+```js
+/*
+ * @Author: lizhiyuan
+ * @Date: 2020-12-14 15:52:23
+ * @LastEditors: lizhiyuan
+ * @LastEditTime: 2020-12-16 15:18:29
+ */
+
+// 生产者
+const amqp = require('amqplib');
+const mongoose = require('mongoose');
+const connstr = require('./utils/rabbitmq').connstr;
+const env = process.env.NODE_ENV || 'development';
+const config = require('./server_config.json')[env];
+const db_uri = config['mongodb_uri']; 
+// 新的队列程序中禁止使用gfs放入数据库中...
+// 队列程序需要将所有的逻辑写在本文件中,除非通用的方法调用,否则不允许将其他的文件引入
+
+// 先连接数据库,再连接amqp服务器
+function rabbitmq_init(){
+    return mongoose.connect(db_uri,{ useNewUrlParser: true }).then(()=>{
+        return amqp.connect(connstr).then(conn => {
+            // 代码失败...
+            process.once('SIGINT',function(){conn.close(),process.exit(1)})
+            return conn.createChannel().then((ch) => {
+                return ch;
+            }).catch(err=>{
+                console.log('rabbitmq创建频道失败....',err);
+                process.exit(1); // 直接退出
+            })
+        }).catch(err => {
+            console.log('amqp服务器连接失败...',err);
+            process.exit(1); // 直接退出
+        })
+    },err => {
+        console.log('数据库连接失败...',err);
+        process.exit(1); // 直接退出
+    })
+}
+async function main(){
+    try{
+        let message = "我的消息";
+        let ch = await rabbitmq_init();
+        let ex = 'ex_zsy_v1';
+        ch.assertExchange(ex, 'topic', {
+            durable: true
+        });
+        for(let i=0;i<1000;i++){
+            let arg = {};
+            if(i%2 != 0){
+                // 尝试带着优先级去发布
+                arg = {priority:10}
+            }
+            ch.publish(ex,'zsy.lzy.test',Buffer.from(message + i),arg);
+        }
+    }catch(e){
+        console.log("代码问题捕获...",e)
+        process.exit(1); // 直接退出
+    }
+}
+main();
+```
+
+消费者代码示例
+
+```js
+/*
+ * @Author: lizhiyuan
+ * @Date: 2020-12-14 15:52:37
+ * @LastEditors: lizhiyuan
+ * @LastEditTime: 2020-12-16 15:23:07
+ */
+
+// 消费者
+const amqp = require('amqplib');
+const mongoose = require('mongoose');
+const connstr = require('./utils/rabbitmq').connstr;
+const env = process.env.NODE_ENV || 'development';
+const config = require('./server_config.json')[env];
+const db_uri = config['mongodb_uri']; 
+// 新的队列程序中禁止使用gfs放入数据库中...
+// 队列程序需要将所有的逻辑写在本文件中,除非通用的方法调用,否则不允许将其他的文件引入
+
+// 先连接数据库,再连接amqp服务器
+function rabbitmq_init(){
+    return mongoose.connect(db_uri,{ useNewUrlParser: true }).then(()=>{
+        return amqp.connect(connstr).then(conn => {
+            // 代码失败...
+            process.once('SIGINT',function(){conn.close(),process.exit(1)})
+            return conn.createChannel().then((ch) => {
+                return ch;
+            }).catch(err=>{
+                console.log('rabbitmq创建频道失败....',err);
+                process.exit(1); // 直接退出
+            })
+        }).catch(err => {
+            console.log('amqp服务器连接失败...',err);
+            process.exit(1); // 直接退出
+        })
+    },err => {
+        console.log('数据库连接失败...',err);
+        process.exit(1); // 直接退出
+    })
+}
+async function main(){
+    try{
+        let ch = await rabbitmq_init();
+        // 实现rabbitmq的逻辑代码即可...这里基本上异步就用async/await即可....
+        let ex = 'ex_zsy_v1';
+        // 判断该频道是否存在
+        ch.assertExchange(ex, 'topic', {
+            durable: true
+        });
+        // 绑定一个路由,根据路由进行转发
+        ch.bindQueue('lzy_test', ex, 'zsy.lzy.test');
+        ch.consume('lzy_test', function (msg) {
+           // 程序报错,队列程序直接崩就行了 
+           // 写我们的业务逻辑代码,最后成功后别忘了调用ch.ack将消息确认掉...
+           console.log(msg.content.toString());
+           ch.ack(msg);
+        },{
+            noAck: false, // 
+            'x-priority':10
+        })
+    }catch(e){
+        console.log("代码问题捕获...",e)
+        process.exit(1); // 直接退出
+    }
+}
+main();
+```
+
+
+## 10.定时任务代码规范
+
+以函数形式放在clis/文件夹下即可.根据功能命令,做好功能的注释以及定时规则
+
+```js
+    function cron(){
+        try{
+
+        }catch(e){
+            logger.error(e); // 将错误写入日志平台
+            process.exit(1) // 定时任务代码退出....
+        }
+    }
+    module.exports.cron = cron; // 将要运行的函数暴露
+```
+
+上线后补充具体细则....
 
 
 

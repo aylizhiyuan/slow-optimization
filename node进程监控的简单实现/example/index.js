@@ -4,13 +4,14 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-11 10:05:45
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-19 11:46:31
+ * @LastEditTime: 2020-12-17 17:38:00
  */
 const forever = require('forever-monitor');
 const path = require('path');
 const fs = require('fs');
 const env = process.env.NODE_ENV || 'development';
-const rabbitmq_config = require('./config').rabbitmq_config[env];
+const arguments = process.argv.splice(2);
+const rabbitmq_config = require('./config').rabbitmq_config[env] || require(arguments[0]).rabbitmq_config[env];
 const taskList = rabbitmq_config.rabbitmq_list;
 
 var tasks = [];
@@ -65,3 +66,10 @@ for(let i=0;i<taskList.length;i++){
         tasks[i].start();
     }
 }
+function exit(){
+    for(let i=0;i<tasks.length;i++){
+        if(tasks[i]) tasks[i].child.kill();
+    }
+    process.exit(0);
+}
+['SIGINT','SIGTERM'].forEach(signal => process.on(signal,exit))

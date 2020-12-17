@@ -4,7 +4,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-10 10:13:55
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-11-19 11:30:00
+ * @LastEditTime: 2020-12-17 15:32:58
  */
 // 定时任务的日志配置文件
 const log4js = require("log4js");
