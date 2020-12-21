@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-25 10:42:52
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-12-17 19:14:32
+ * @LastEditTime: 2020-12-21 16:50:31
 -->
 # mongodb分片
 
@@ -38,6 +38,35 @@ MongoDB分片集群将数据分布在一个或多个分片上。每个分片部�
 
 mongos进程是轻量级且非持久化的。它们通常运行与与应用服务器相同的机器上，确保对任意分片的请求只经过一次网络跳转。换言之，应用程序连接本地的mongos，而mongos管理了指向单独分片的连接。
 
+**配置服务器**
+
+如果mongos进程是非持久化的,那么必须有地方能持久保存集群的公认状态.这就是配置服务器的工作.
 
 
+## 实际部署
+
+```
+shard Server 1 : 27020
+shard Server 2 : 27021
+shard Server 3 : 27022
+shard Server 4 : 27023
+
+config Server : 27100
+route Process : 40000
+```
+
+### 1. 启动分片服务器(副本集)
+
+```shell
+// 启动分片1
+mongod --port 27020
+// 启动分片2
+mongod --port 27023 
+```
+
+### 2. 启动config Server
+```shell
+// 像正常启动mongodb服务器一样启动configServer
+mongod --port 27100
+```
 
