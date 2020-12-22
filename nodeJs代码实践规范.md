@@ -616,27 +616,16 @@ function startWorker(){
                     ch.ack(m.msg);
                     n.send({ cmd: 'exit' });
                 });
-                // 当子进程失败的时候直接消费掉,不会阻塞.....
-                n.on("close",function(code){
-                    // 当程序不是正常结束的时候直接ACK掉它
-                    // 也可以全程将子进程代码加入到try{}catch{}中,报错的时候调用process.exit(1);
-                    if(code == 1){
-                        // ch.ack(msg) // 这里可以选择将父进程退出
-                        process.exit(0);
-                    }
-                })
                 // 当父进程退出的时候,随手要将子进程也杀死掉....
                 //控制台自动退出
                 process.on('SIGINT', function (code) {
                     n.kill();
-                })
-                //控制台ctrl+c
-                process.on('SIGHUP', function (code) {
-                    n.kill();
+                    process.exit(0);
                 })
                 // shell kill
                 process.on('SIGTERM', function (code) {
                    n.kill();
+                   process.exit(0);
                 })
                 // 告知子进程可以开始工作了....
                 n.send({ cmd: 'exec', cond: cond, msg: msg });

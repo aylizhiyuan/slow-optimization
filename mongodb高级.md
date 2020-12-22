@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-25 10:42:52
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-12-21 16:50:31
+ * @LastEditTime: 2020-12-22 10:02:56
 -->
 # mongodb分片
 
@@ -69,4 +69,29 @@ mongod --port 27023
 // 像正常启动mongodb服务器一样启动configServer
 mongod --port 27100
 ```
+
+
+### 3. 启动mongos
+
+```shell
+// 启动mongos,将配置服务器作为参数启动
+
+mongos --port 40000 --configdb localhost:27100 
+
+```
+
+### 4. 连接mongos,添加分片信息
+
+```
+// 连接mongos服务器
+
+mongo localhost:40000/admin
+
+// 添加我们的分片服务器
+db.runCommand({addshard:"localhost:27020"})
+// 添加我们的分片服务器
+db.runCommand({addshard:"localhost:27029"})
+```
+
+
 
