@@ -610,7 +610,9 @@ function startWorker(){
                 } catch (e) {
                     cond = msg.content.toString();
                 }
-                var n = child_process.fork('queue/rabbit_task_tm_download_attend_detail_worker.js');
+                // 路径必须使用绝对路径 !!!!!!
+                var fork_path = fs.realpathSync(__dirname) + "/rabbit_task_clock_result_worker.js"
+                var n = child_process.fork(fork_path);
                 // 子进程发来成功的消息后,ACK掉消息后将通知子进程关掉
                 n.on('message', function (m) {
                     ch.ack(m.msg);
@@ -841,6 +843,40 @@ main();
 ```
 
 上线后补充具体细则....
+
+
+
+
+## 11. 有fork行为的队列统计
+
+- rabbit_task_clock_result_1.js
+- rabbit_tsk_clock_result.js
+- rabbit_task_common.js   公共方法
+- rabbit_task_download_peopleconfig.js
+- rabbit_task_download_sign_in.js
+- rabbit_task_download_worktime.js
+- rabbit_task_pa_contact_batch.js
+- rabbit_task_pa_package_people_privilege_calc.js
+- rabbit_task_pa_package_people_privilege.js
+- rabbit_task_people_update_subordinate_calc.js
+- rabbit_task_performance_mult_copy_trigger.js
+- rabbit_task_pm_history_export.js
+- rabbit_task_py_compensation_calc_sax_report.js  xxxxxx 已经废弃
+- rabbit_task_py_compensation_rule_generate.js
+- rabbit_task_py_compensation_tax.js
+- rabbit_task_sys_monitor_core_calc.js
+- rabbit_task_sys_pa_lsnw_download.js xxxxx 已经废弃
+- rabbit_task_sys_pa_lsnw.js    xxxxxx 已经废弃
+- rabbit_task_tm_custom_report_download.js
+- rabbit_task_tm_decoupling_wr_msg.js
+- rabbit_task_tm_decoupling_wr.js
+- rabbit_task_tm_download_attend_detail.js
+- rabbit_task_tm_download_clock_record_template.js
+- rabbit_task_tm_download_clock_record.js
+- rabbit_task_tm_update_clock_location.js
+- rabbit_task_work_plan.js
+- rabbit_task_worker_common.js 公共方法
+
 
 
 
