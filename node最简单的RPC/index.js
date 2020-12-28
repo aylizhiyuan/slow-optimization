@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-12-11 14:04:30
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-12-11 16:51:05
+ * @LastEditTime: 2020-12-28 16:16:47
  */
 
 var net = require('net');
@@ -55,7 +55,8 @@ function LightRPC(wrapper,logger){
 }   
 /**
  * @description: 客户端连接TCP服务器,callback中调用方法发送消息给服务器
- * @param {*}
+ * @param {string}
+ * @param {string} 
  * @return {*}
  */
 LightRPC.prototype.connect = function(port,host,callback){
@@ -73,7 +74,23 @@ LightRPC.prototype.connect = function(port,host,callback){
         connection.write(command(descrCmd));
     })
     var commandsCallback = function(cmd){
-        
+        if(cmd.command === resultCmd){
+            if(self.callbacks[cmd.data.id]){
+                self.callbacks[cmd.data.id].apply(this,cmd.data.args)
+                delete self.callbacks[cmd.data.id];
+            }
+        }else if(cmd.command === errorCmd){
+            if(self.callbacks[cmd.data.id]){
+                self.callbacks[cmd.data.id].call(this,cmd.data.args);
+                delete self.callbacks[cmd.data.id];
+            }
+        }else if(cmd.command === descrCmd){
+            var remoteObj = {};
+            for(var p in cmd.data){
+                remoteObj[p] = getRemoteCallFunction(p, self.callbacks, connection);
+            }
+            callback(remoteObj,connection);
+        }
     }
     var lengthObj = {
         bufferBytes:undefined,
@@ -107,7 +124,7 @@ LightRPC.prototype.listen = function(port){
 }
 
 /**
- * @description:  服务器建立连接的具体操作...
+ * @description:  建立TCP服务器
  * @param {*}
  * @return {*}
  */
