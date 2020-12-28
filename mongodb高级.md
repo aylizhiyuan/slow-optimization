@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-11-25 10:42:52
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-12-22 18:03:54
+ * @LastEditTime: 2020-12-23 17:42:58
 -->
 # mongodb分片
 
@@ -99,8 +99,12 @@ db.runCommand({addshard:"localhost:27029"})
 // 要分片的数据库
 db.runCommand({enablesharding:"mydb"});
 // 设置要分片的集合:users集合,name字段作为key来分片
+// 1:主键值正向遍历
+// 2:主键值反向遍历
+// hashed:主键hash值
 db.runCommand({shardcollection:"mydb.users",key:{name:1}})
-
 ```
+
+
 
 
