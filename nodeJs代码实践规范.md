@@ -847,35 +847,260 @@ main();
 
 
 
-## 11. 有fork行为的队列统计
+## 11. v8内存使用指南
 
-- rabbit_task_clock_result_1.js
-- rabbit_tsk_clock_result.js
-- rabbit_task_common.js   公共方法
-- rabbit_task_download_peopleconfig.js
-- rabbit_task_download_sign_in.js
-- rabbit_task_download_worktime.js
-- rabbit_task_pa_contact_batch.js
-- rabbit_task_pa_package_people_privilege_calc.js
-- rabbit_task_pa_package_people_privilege.js
-- rabbit_task_people_update_subordinate_calc.js
-- rabbit_task_performance_mult_copy_trigger.js
-- rabbit_task_pm_history_export.js
-- rabbit_task_py_compensation_calc_sax_report.js  xxxxxx 已经废弃
-- rabbit_task_py_compensation_rule_generate.js
-- rabbit_task_py_compensation_tax.js
-- rabbit_task_sys_monitor_core_calc.js
-- rabbit_task_sys_pa_lsnw_download.js xxxxx 已经废弃
-- rabbit_task_sys_pa_lsnw.js    xxxxxx 已经废弃
-- rabbit_task_tm_custom_report_download.js
-- rabbit_task_tm_decoupling_wr_msg.js
-- rabbit_task_tm_decoupling_wr.js
-- rabbit_task_tm_download_attend_detail.js
-- rabbit_task_tm_download_clock_record_template.js
-- rabbit_task_tm_download_clock_record.js
-- rabbit_task_tm_update_clock_location.js
-- rabbit_task_work_plan.js
-- rabbit_task_worker_common.js 公共方法
+64位系统约为1.4G,在V8中,所有的js对象都是通过堆来进行分配的
+
+```js
+$ node
+$ process.memoryUsage();
+{
+  rss: 24834048, // 该进程分配到的总内存,包括堆 + 栈 + 代码区 + 全局区
+  heapTotal: 5222400, // 堆的总量
+  heapUsed: 3004152, // 堆的使用情况
+  external: 1507096,
+  arrayBuffers: 9396
+}
+```
+
+js声明变量并赋值的时候，所使用的对象的内存就在堆中。如果已申请的堆空闲内存不够分配新的对象，将继续申请堆内存，直到堆的大小超过了v8的限制
+
+写代码的时候要主动去触发v8的垃圾回收机制
+
+**作用域**
+
+```js
+var foo = function(){
+    var local = {};
+}
+```
+foo函数在每次调用的时候都会创建对应的作用域,函数执行结束后,该作用域都会销毁.同时,作用域中声明的局部变量分配在该作用域上,随作用域的销毁而销毁。
+
+定义变量的时候，尽量的将它定义在一个作用域中,代码执行完毕后会释放
+
+如果变量是全局的变量,由于全局作用域需要进程结束后才能释放，此时将导致引用的对象常驻内存。如果需要释放常驻内存的对象，可以通过delete操作来删除引用关系。或者将变量重新赋值,让旧的对象脱离引用关系。
+
+```js
+global.foo = "I am global object";
+console.log(global.foo); // => "I am global object"
+delete global.foo;
+// 或者重新赋值
+global.foo = undefined; // or null
+console.log(global.foo); // => undefined
+```
+
+堆外的内存指的大多是二进制
+
+使用原则:
+
+- 在一个永远不退出的队列进程中一定要仔细考虑全局变量的声明
+- 数据库查询出来的结果一定要处理完毕后删除或者重新赋值(数据量较大)
+- 队列程序的积压问题根本上来说就是生产者的速度快于消费者的速度,根本上解决这个问题就是必须限制消费者的消费时间，以便给剩余的消费者更多的时间来完成
+
+
+
+实例分析内存泄漏:
+
+准备一份内存泄漏的代码
+```js
+var memwatch = requrie('memwatch');
+memwatch.on('leak',function(info){
+    console.log("leak:");
+    console.log(info);
+})
+memwatch.on("stats",function(stats){
+    console.log('stats:');
+    console.log(stats);
+})
+var http = require("http");
+var leakArray = [];
+var leak = function(){
+    leakArray.push("leak" + Math.random());
+}
+http.createServer(function(req,res){
+    leak();
+    res.writeHead(200,{"Content-Type":"text/plain"});
+    res.end("hello world\n");
+}).listen(1337);
+console.log('Server running at http://127.0.0.1:1337');
+
+```
+在进程中使用node-memwatch之后,每次进行全堆垃圾回收的时候,都会触发stats事件.
+
+```js
+stats:
+    {
+      num_full_gc: 4, // 第几次全堆垃圾回收
+      num_inc_gc: 23, // 第几次增量垃圾回收
+      heap_compactions: 4, // 第几次对老生代进行整理
+      usage_trend: 0, // 使用趋势
+      estimated_base: 7152944, // 预估基数
+      current_base: 7152944, // 当前基数
+      min: 6720776, // 最小
+      max: 7152944 // 最大
+    }
+```
+
+如果经过了连续5次垃圾回收后，内存仍然没有被释放,这意味着有内存泄漏发生,node-memwatch会触发一个leak事件
+
+```js
+leak:
+    {
+      start: Mon Oct 07 2013 13:46:27 GMT+0800 (CST),
+      end: Mon Oct 07 2013 13:54:40 GMT+0800 (CST),
+      growth: 6222576, // 内存涨了多少
+      reason: 'heap growth over 5 consecutive GCs (8m 13s) - 43.33 mb/hr'
+    }
+```
+
+最终你看到的只能是存在内存泄漏,下面进行堆内存比较
+
+```js
+var memwatch = require('memwatch');
+    var leakArray = [];
+    var leak = function() {
+      leakArray.push("leak" + Math.random());
+    };
+    
+    // Take first snapshot
+    var hd = new memwatch.HeapDiff();
+    
+    for (var i = 0; i < 10000; i++) {
+      leak();
+    }
+
+    // Take the second snapshot and compute the diff
+    var diff = hd.end();
+    console.log(JSON.stringify(diff, null, 2));
+```
+
+查看结果:
+```js
+{
+      "before": {
+        "nodes": 11719,
+        "time": "2013-10-07T06:32:07.000Z",
+        "size_bytes": 1493304,
+        "size": "1.42 mb"
+      },
+      "after": {
+        "nodes": 31618,
+        "time": "2013-10-07T06:32:07.000Z",
+        "size_bytes": 2684864,
+        "size": "2.56 mb"
+      },
+      "change": {
+        "size_bytes": 1191560,
+        "size": "1.14 mb",
+        "freed_nodes": 129,
+        "allocated_nodes": 20028,
+        "details": [
+          {
+            "what": "Array",
+            "size_bytes": 323720,
+            "size": "316.13 kb",
+            "+": 15,
+            "-": 65
+          },
+          {
+            "what": "Code",
+            "size_bytes": -10944,
+            "size": "-10.69 kb",
+            "+": 8,
+            "-": 28
+          },
+          {
+            "what": "String",
+            "size_bytes": 879424,
+            "size": "858.81 kb",
+            "+": 20001,
+            "-": 1
+          }
+        ]
+      }
+    }
+```
+
+在上述代码中，加号和减号分别表示分配和释放的字符串对象数量。可以通过上面的输出结果猜测到，有大量的字符串没有被回收。
+## 12. CPU标高的测试手段和测试用例
+
+
+如何测试CPU接口性能代码:
+
+```js
+//测试接口CPU标高
+var fs = require('fs');
+var crypto = require('crypto');
+var bluebird = require('bluebird');
+var profiler = require('v8-profiler');
+var express = require('express');
+var app = express();
+
+//CPU密集型操作的函数
+app.get('/encrypt',function(req,res){
+    var password = req.query.password || 'test';
+    var salt = crypto.randomBytes(128).toString('base64');
+    var encryptedPassword = crypto.pbkdf2Sync(password,salt,10000,64,'sha512').toString('hex');
+    res.status(200).send(encryptedPassword);
+})
+//此操作是为了收集30s的v8 log然后dump到一个文件中去
+app.get('/cpuprofile',function(req,res){
+    //开始快照
+    profiler.startProfiling("CPU profile");
+    //30秒的快照开始
+    bluebird.delay(30000).then(function(){
+        var profile = profiler.stopProfiling()
+   profile.export()
+     .pipe(fs.createWriteStream(`cpuprofile-${Date.now()}.cpuprofile`))
+     .on('finish', () => profile.delete())
+    });
+})
+app.listen(3000,function(){
+    console.log("测试cpu性能服务器启动成功....")
+})
+
+//1. 启动node cpu-v8-profiler.js服务器
+//2. curl localhost:3000/cpuprofile
+//3. ab -c 20 -n 2000 "http://localhost:3000/encrypt?password=123456"
+//4. 打开检查---> devtools ---> more tools --> javascript profile ---> load
+
+//查看占用最多CPU性能的函数,也可以通过火焰图查看
+// npm i flamegraph -g 
+// flamegraph -t cpuprofile -f cpuprofile-xxx.cpuprofile -o cpuprofile.svg
+
+
+// 通过v8-analytics 可以很快速的看到CPU的使用情况
+// npm i v8-analytics -g 
+// va timeout cpuprofile-xxx.cpuprofile 200 --only
+```
+
+如何测试进程CPU性能代码:
+
+```js
+//测试进程cpu标高
+var crypto = require('crypto');
+function hash(password){
+    var salt = crypto.randomBytes(128).toString('base64');
+    var hash = crypto.pbkdf2Sync(password,salt,10000,64,'sha512');
+    return hash
+}
+console.time("pbkdf2Sync");
+for(var i = 0; i < 100; i++) {
+    hash('random_password');
+}
+console.timeEnd('pbkdf2Sync');
+
+// $ node --prof app # 生成 isolate-0x103000000-v8.log
+// $ node --prof-process --preprocess isolate-0x103000000-v8.log > v8.json # 格式化成 JSON 文件
+// $ git clone https://github.com/v8/v8.git # 克隆 v8 仓库
+// $ open v8/tools/profview/index.html # 打开 V8 profiling log processor
+// 注意需要在node高版本下进行
+
+```
+
+> 如果需要在本地查看CPU的使用情况，可以使用Clinic.js 模块进行分析
+
+
 
 
 
