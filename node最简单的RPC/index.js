@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-12-11 14:04:30
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2021-01-06 10:54:25
+ * @LastEditTime: 2021-01-06 11:16:51
  */
 
 var net = require('net');
@@ -73,6 +73,7 @@ LightRPC.prototype.connect = function(port,host,callback){
     connection.on("connect",function(){
         connection.write(command(descrCmd));
     })
+    // 客户端处理命令
     var commandsCallback = function(cmd){
         if(cmd.command === resultCmd){
             if(self.callbacks[cmd.data.id]){
@@ -131,6 +132,7 @@ LightRPC.prototype.listen = function(port){
 LightRPC.prototype.getServer = function(){
     var self = this;
     var server = net.createServer(function(c){
+        // 服务器处理命令
         var commandsCallback = function(cmd){
             if(cmd.command === descrCmd){
                 c.write(self.descrStr);
@@ -173,7 +175,7 @@ LightRPC.prototype.close = function(){
     this.server.close();
 }
 /**
- * @description: 将执行的命令和参数转化为二进制数组
+ * @description: 将执行的命令和参数转化为字符串
  * @param {string} name 命令名称
  * @param {string} data 数据
  * @return {string} 字符串,前面是字符串的字节长度 + 字符串
@@ -198,18 +200,89 @@ function command(name,data){
 function getOnDataFn(commandCallback,lengthObj){
     return function(data){
         // data为接收到的数据字符串
-        
-        
+        if(lengthObj.bufferBytes && lengthObj.bufferBytes.length > 0){
+            var tmpBuff = new Buffer(lengthObj.bufferBytes.length + data.length);
+            lengthObj.bufferBytes.copy(tmpBuff,0);
+            data.copy(tmpBuff,length.bufferBytes.length);
+            lengthObj.bufferBytes = tmpBuff;
+        }else{
+            lengthObj.bufferBytes = data;
+        }
+        var commands = getCommands.call(lengthObj);
+        commands.forEach(commandsCallback);
     }
 }
 function getRemoteCallFunction(cmdName,callbacks,connection){
-    
+    return function(){
+		var id = idGenerator();
+
+		if(typeof arguments[arguments.length - 1] === 'function'){
+			callbacks[id] = arguments[arguments.length - 1];
+		}
+
+		var args = [];
+		for(var ai = 0, al = arguments.length; ai < al; ++ai){
+			if(typeof arguments[ai] !== 'function'){
+				args.push(arguments[ai]);
+			}
+		}
+
+		var newCmd = command(cmdName, {id: id, args: args});
+		connection.write(newCmd);
+	};
 }
 function getSendCommandBackFunction(connection,cmdId){
+    return function(){
+		var innerArgs = [];
 
+		for(var ai = 0, al = arguments.length; ai < al; ++ai){
+			if(typeof arguments[ai] !== 'function'){
+				innerArgs.push(arguments[ai]);
+			}
+		}
+
+		var resultCommand = command(resultCmd, {id: cmdId, args: innerArgs});
+		connection.write(resultCommand);
+	};
 }
 function getCommands(){
-    
+    var commands = [];
+    var i = -1;
+    var parseCommands = function(){
+        if(this.getLength === true){
+			i = getNewlineIndex(this.bufferBytes);
+			if(i > -1){
+				this.length = Number(this.bufferBytes.slice(0, i).toString());
+				this.getLength = false;
+				// (i + 1) for \n symbol
+				this.bufferBytes = clearBuffer(this.bufferBytes, i + 1);
+			}
+		}
+
+		if(this.bufferBytes && this.bufferBytes.length >= this.length){
+			var cmd = this.bufferBytes.slice(0, this.length).toString();
+			this.getLength = true;
+
+			try{
+				var parsedCmd = JSON.parse(cmd);
+			}
+			catch(e){
+				log.e('ERROR PARSE');
+				log.e(cmd);
+				log.e(this.length, this.bufferBytes.toString());
+				return;
+			}
+
+			commands.push(parsedCmd);
+			this.bufferBytes = clearBuffer(this.bufferBytes, this.length);
+
+			if(this.bufferBytes && this.bufferBytes.length > 0){
+				parseCommands.call(this);
+			}
+		}
+    }
+    parseCommands.call(this);
+    return commands
 }
 /**
  * @description: 获取buffer中一行数据的结束索引
