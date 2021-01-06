@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-12-11 14:04:30
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-12-28 16:16:47
+ * @LastEditTime: 2021-01-06 10:54:25
  */
 
 var net = require('net');
@@ -129,6 +129,39 @@ LightRPC.prototype.listen = function(port){
  * @return {*}
  */
 LightRPC.prototype.getServer = function(){
+    var self = this;
+    var server = net.createServer(function(c){
+        var commandsCallback = function(cmd){
+            if(cmd.command === descrCmd){
+                c.write(self.descrStr);
+            }else if(!self.wrapper[cmd.command]){
+                c.write(command('error',{code:"UNKNOWN_COMMAND"}))
+            }else{
+                var args = cmd.data.args;
+				args.push(getSendCommandBackFunction(c, cmd.data.id));
+
+				try{
+					self.wrapper[cmd.command].apply({}, args);
+				}
+				catch(err){
+					log.e(err);
+					var resultCommand = command(errorCmd, {id: cmd.data.id, err: err});
+					c.write(resultCommand);
+				}
+            }
+        }
+        var lengthObj = {
+            bufferBytes:undefined,
+            getLength:true,
+            length:-1
+        };
+        c.on('data',getOnDataFn(commandsCallback,lengthObj));
+        c.on('error',function(exception){
+            log.e(exception);
+        })
+    })
+    this.server = server;
+    return server
 
 }
 /**
@@ -143,7 +176,7 @@ LightRPC.prototype.close = function(){
  * @description: 将执行的命令和参数转化为二进制数组
  * @param {string} name 命令名称
  * @param {string} data 数据
- * @return {Array} 字符串,前面是字符串的字节长度 + 字符串
+ * @return {string} 字符串,前面是字符串的字节长度 + 字符串
  */
 function command(name,data){
     var cmd = {
@@ -155,8 +188,19 @@ function command(name,data){
     // 53 + '\n' + {"command":"__D","data":{"combine":{},"multiply":{}}}
     return Buffer.byteLength(cmdStr) + '\n' + cmdStr
 }
+
+/**
+ * @description: 返回一个处理函数
+ * @param {Function} commandCallback 处理各种命令的函数
+ * @param {Object} lengthObj 应该是各种参数把
+ * @return {*} 
+ */
 function getOnDataFn(commandCallback,lengthObj){
-    
+    return function(data){
+        // data为接收到的数据字符串
+        
+        
+    }
 }
 function getRemoteCallFunction(cmdName,callbacks,connection){
     
