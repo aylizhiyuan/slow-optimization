@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-12-11 14:04:26
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2020-12-11 14:12:22
+ * @LastEditTime: 2021-01-06 11:31:40
  */
 var rpc = require('./index.js');
 rpc.connect(5556, 'localhost', function(remote, conn){

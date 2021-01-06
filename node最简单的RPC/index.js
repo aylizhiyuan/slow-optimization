@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-12-11 14:04:30
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2021-01-06 11:16:51
+ * @LastEditTime: 2021-01-06 11:33:23
  */
 
 var net = require('net');
@@ -174,6 +174,10 @@ LightRPC.prototype.getServer = function(){
 LightRPC.prototype.close = function(){
     this.server.close();
 }
+LightRPC.connect = function(){
+	var rpc = new LightRPC();
+	return rpc.connect.apply(rpc, arguments);
+};
 /**
  * @description: 将执行的命令和参数转化为字符串
  * @param {string} name 命令名称
@@ -197,7 +201,7 @@ function command(name,data){
  * @param {Object} lengthObj 应该是各种参数把
  * @return {*} 
  */
-function getOnDataFn(commandCallback,lengthObj){
+function getOnDataFn(commandsCallback,lengthObj){
     return function(data){
         // data为接收到的数据字符串
         if(lengthObj.bufferBytes && lengthObj.bufferBytes.length > 0){
