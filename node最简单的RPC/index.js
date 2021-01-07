@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-12-11 14:04:30
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2021-01-06 11:33:23
+ * @LastEditTime: 2021-01-07 14:48:57
  */
 
 var net = require('net');
@@ -75,6 +75,8 @@ LightRPC.prototype.connect = function(port,host,callback){
     })
     // 客户端处理命令
     var commandsCallback = function(cmd){
+        // 这里已经拿到了从服务器中接受到的结果后
+        // 调用对应的callbacks,结果传递给它
         if(cmd.command === resultCmd){
             if(self.callbacks[cmd.data.id]){
                 self.callbacks[cmd.data.id].apply(this,cmd.data.args)
@@ -86,10 +88,13 @@ LightRPC.prototype.connect = function(port,host,callback){
                 delete self.callbacks[cmd.data.id];
             }
         }else if(cmd.command === descrCmd){
+            // 客户端接收到服务器提供的方法后,进行的操作
             var remoteObj = {};
             for(var p in cmd.data){
+                // 遍历data中服务器提供的方法
                 remoteObj[p] = getRemoteCallFunction(p, self.callbacks, connection);
             }
+            // console.log(remoteObj);
             callback(remoteObj,connection);
         }
     }
@@ -134,15 +139,22 @@ LightRPC.prototype.getServer = function(){
     var server = net.createServer(function(c){
         // 服务器处理命令
         var commandsCallback = function(cmd){
+            // 当服务器接收到{command:'__D'}命令的时候
             if(cmd.command === descrCmd){
+                // console.log(self.descrStr);
+                // 将command:__D,data:{}写给客户端,告诉客户端服务器提供多少方法
                 c.write(self.descrStr);
             }else if(!self.wrapper[cmd.command]){
                 c.write(command('error',{code:"UNKNOWN_COMMAND"}))
             }else{
+                // 接收到客户端要调取的方法以及参数
+                // {"command":"combine","data":{"id":"e7be5c7a-4ff0-4d6f-9394-2ed70c07a374","args":[4,5]}}
                 var args = cmd.data.args;
+                // 将服务器中的callback函数封装
 				args.push(getSendCommandBackFunction(c, cmd.data.id));
 
 				try{
+                    // 调用服务器的combine方法,并将参数传递给它
 					self.wrapper[cmd.command].apply({}, args);
 				}
 				catch(err){
@@ -204,37 +216,63 @@ function command(name,data){
 function getOnDataFn(commandsCallback,lengthObj){
     return function(data){
         // data为接收到的数据字符串
+        // console.log(data.toString());
+        // 客户端和服务器 除 第一次外的数据传输
         if(lengthObj.bufferBytes && lengthObj.bufferBytes.length > 0){
             var tmpBuff = new Buffer(lengthObj.bufferBytes.length + data.length);
             lengthObj.bufferBytes.copy(tmpBuff,0);
             data.copy(tmpBuff,length.bufferBytes.length);
             lengthObj.bufferBytes = tmpBuff;
         }else{
+            // console.log("第一次客户端连接服务器的时候");
+            // 服务器接收到了来自客户端的command:__D命令
+            // 客户端接收到了来自服务器返回的command:__D,data:{combine:{},multipy:{}}
             lengthObj.bufferBytes = data;
+            // console.log(lengthObj.bufferBytes.toString());
         }
+        // 第一次服务器的lengthObj = {command:__d}
+        // 第一次客户端的lengthObj = {command:__d,data:{combine:{},multipy:{}}}
         var commands = getCommands.call(lengthObj);
         commands.forEach(commandsCallback);
     }
 }
+/**
+ * @description: 客户端接收到服务器的方法后,进行的操作
+ * @param {*} cmdName 举例combine,multipy等方法名称
+ * @param {*} callbacks callbacks第一次是空的
+ * @param {*} connection TCP连接的句柄
+ * @return {*}  返回的实际上是一个函数,remote.combine()实际就是这个函数
+ */
 function getRemoteCallFunction(cmdName,callbacks,connection){
+    // 实际就是你调用remote.combine函数的操作
     return function(){
 		var id = idGenerator();
-
+        // 将这个remote.combine的回调函数存放到这里来
 		if(typeof arguments[arguments.length - 1] === 'function'){
 			callbacks[id] = arguments[arguments.length - 1];
 		}
 
-		var args = [];
+        var args = [];
+        // 将remote.combine的参数集合放入args中去
 		for(var ai = 0, al = arguments.length; ai < al; ++ai){
 			if(typeof arguments[ai] !== 'function'){
 				args.push(arguments[ai]);
 			}
 		}
-
-		var newCmd = command(cmdName, {id: id, args: args});
+        
+        var newCmd = command(cmdName, {id: id, args: args});
+        // {"command":"combine","data":{"id":"e7be5c7a-4ff0-4d6f-9394-2ed70c07a374","args":[4,5]}}
+        // 发送给服务器,让服务器处理
+        // console.log(newCmd);
 		connection.write(newCmd);
 	};
 }
+/**
+ * @description:  依然是封装回调函数
+ * @param {*} connection 连接句柄
+ * @param {*} cmdId cmd的ID值
+ * @return {*} 实际就是combine(1,3,function(){})里面的回调函数
+ */
 function getSendCommandBackFunction(connection,cmdId){
     return function(){
 		var innerArgs = [];
@@ -245,7 +283,10 @@ function getSendCommandBackFunction(connection,cmdId){
 			}
 		}
 
-		var resultCommand = command(resultCmd, {id: cmdId, args: innerArgs});
+        var resultCommand = command(resultCmd, {id: cmdId, args: innerArgs});
+        // {"command":"__R","data":{"id":"0bad1f27-34f5-4e3e-a9e0-1e4f329bf0cb","args":[9]}}
+        // console.log(resultCommand);
+        // 算出结果后写回给客户端
 		connection.write(resultCommand);
 	};
 }
@@ -254,19 +295,24 @@ function getCommands(){
     var i = -1;
     var parseCommands = function(){
         if(this.getLength === true){
+            // 拿到第一个空格处的索引
 			i = getNewlineIndex(this.bufferBytes);
 			if(i > -1){
-				this.length = Number(this.bufferBytes.slice(0, i).toString());
+                // 获取命令的长度,就是该字符串的长度
+                this.length = Number(this.bufferBytes.slice(0, i).toString());
+                // console.log(this.length);
 				this.getLength = false;
-				// (i + 1) for \n symbol
-				this.bufferBytes = clearBuffer(this.bufferBytes, i + 1);
+                // (i + 1) for \n symbol
+                // 将命令截取到后直接存放如bufferBytes中
+                this.bufferBytes = clearBuffer(this.bufferBytes, i + 1);
+                // console.log(this.bufferBytes.toString());
 			}
 		}
 
 		if(this.bufferBytes && this.bufferBytes.length >= this.length){
 			var cmd = this.bufferBytes.slice(0, this.length).toString();
 			this.getLength = true;
-
+            // 将命令的对象格式化
 			try{
 				var parsedCmd = JSON.parse(cmd);
 			}
@@ -276,16 +322,18 @@ function getCommands(){
 				log.e(this.length, this.bufferBytes.toString());
 				return;
 			}
-
-			commands.push(parsedCmd);
+            // 存入commands数组中
+            commands.push(parsedCmd);
+            // 将bufferBytes清空
 			this.bufferBytes = clearBuffer(this.bufferBytes, this.length);
-
+            
 			if(this.bufferBytes && this.bufferBytes.length > 0){
 				parseCommands.call(this);
 			}
 		}
     }
     parseCommands.call(this);
+    // console.log('接收到的命令======',commands);
     return commands
 }
 /**
