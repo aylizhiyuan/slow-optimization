@@ -21,12 +21,6 @@
                     "path":"task",
                     "file":"demo.js",
                     "range":"*/1 * * * * *"
-                },
-                {
-                    "name":"cron2",
-                    "path":"task",
-                    "file":"demo.js",
-                    "range":"*/1 * * * * *"
                 }
             ],
             "mongodb_uri":"",
