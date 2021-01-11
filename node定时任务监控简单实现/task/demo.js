@@ -2,7 +2,7 @@
  * @Author: lizhiyuan
  * @Date: 2020-10-27 14:26:59
  * @LastEditors: lizhiyuan
- * @LastEditTime: 2021-01-07 18:32:38
+ * @LastEditTime: 2021-01-11 11:49:31
  */
 // 定时任务的输出规范
 const log4js = require('log4js'); //调用log4js模块
